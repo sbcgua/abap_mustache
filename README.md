@@ -46,7 +46,7 @@ Welcome to My Super Store
 
 ### Data structure
 
-* Input data may be a structure or a table of any type - it is detected automatically. For a table the template is repeated for each line.
+* Input data may be a structure or a table of any type - it is detected automatically. For a table the template is repeated for each line. The depth of the data is not limited for the moment (so can be table in struc in table in struc ...).
 * In addition, there is a special table type `lcl_mustache=>ty_struc_tt` which processed as a universal structure. Field `name` corresponds to tag name (case **insesitive**) and the value may be put either to `val` field or as a referende to `dref`. The latter can be then a reference to a structure or a table. So the above example may would look like:
 
 ```abap
