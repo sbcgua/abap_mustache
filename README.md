@@ -34,7 +34,7 @@ lo_mustache = lcl_mustache=>create(
 
 lv_text = lo_mustache->render( ls_my_data ). " ls_my_data type ty_shop 
 ``` 
-As the result (`lv_act`) you'll get some output like this (assuming you filled the `ls_my_data` appropriately):
+As the result (`lv_text`) you'll get some output like this (assuming you filled the `ls_my_data` appropriately):
 ```
 Welcome to My Super Store
 * Boots - $99.00
@@ -42,12 +42,12 @@ Welcome to My Super Store
 * Shirts - $59.00
 ```
 
-## Supported input and some technical details
+## Supported input and technical details
 
 ### Data structure
 
-* input data may be a structure or a table (template is iterated for each line) of any type - it is detected automatically.
-* In addition, there is a special type `lcl_mustache=>ty_struc_tt` - the universal structure. Field `name` corresponds to tag name (case **in**sesitive) and the value may be put either in `val` field or as a referende to `dref`. The latter can be then a strcuture or a table. So the above example may would look like:
+* Input data may be a structure or a table of any type - it is detected automatically. For a table the template is repeated for each line.
+* In addition, there is a special table type `lcl_mustache=>ty_struc_tt` which processed as a universal structure. Field `name` corresponds to tag name (case **insesitive**) and the value may be put either to `val` field or as a referende to `dref`. The latter can be then a reference to a structure or a table. So the above example may would look like:
 
 ```abap
 data lt_uni_data type lcl_mustache=>ty_struc_tt.
@@ -61,46 +61,46 @@ append initial line to lt_uni_data assigning <i>.
 <i>-name = 'items'.
 get reference of lt_items to <i>-dref. " lt_items is the ty_shop_item_tt filled elsewhere
 ...
-lv_act = lo_mustache->render( lt_uni_data ).
+lv_text = lo_mustache->render( lt_uni_data ).
 ```  
 
-* The `lcl_mustache=>ty_struc_tt` is mainly intended to be the root structure. Supposedly it is convenient to prepare parts of data as regular structures and tables. However, combining them all together at the top level in yet another dedicated structure may be cumbersome. This is where `lcl_mustache=>ty_struc_tt` may serve. Although you are free to choose your own way of course.
+* The `lcl_mustache=>ty_struc_tt` is mainly intended to be the root structure. Supposedly it is convenient to prepare parts of data as regular structures and tables. However, combining them all together at the top level in yet another dedicated structure may be cumbersome. This is where `lcl_mustache=>ty_struc_tt` may serve well. Although you are free to choose your own way of course.
 
 ### Templates    
 
-* Template may be a string or a table of strings (e.g. `type string_table`)
+* Template may be a string or a table of strings (`type string_table`)
 
 ```abap
 lo_mustache = lcl_mustache=>create( lv_template ). " iv_template = lv_template
 * OR
-lo_mustache = lcl_mustache=>create( it_template = lt_template ). " TABLE of strings
+lo_mustache = lcl_mustache=>create( it_template = lt_template_tab ). " TABLE of strings
 ```
 
 * Output can be received as a string or a table of string (`type string_table`)
 ```abap
 lv_text = lo_mustache->render( ls_my_data ).
 * OR
-lt_text = lo_mustache->render_tt( ls_my_data ). " TABLE
+lt_text_tab = lo_mustache->render_tt( ls_my_data ). " TABLE
 ```
 
-* template table is supposed to be separated by newlines. So in case of string rendering newline char will be inserted between template lines. In case of `render_tt` newline char is not inserted.  
-* input string template is split by newline chars for internal processing. Both `LF` and `CRLF` separators are supported. 
+* Template as table is supposed to be separated by newlines. So in case of string rendering newline char will be inserted between template lines. In case of `render_tt` newline char is not inserted (still if any template line contain line breaks it will be split into several output table lines).
+* Input string template is split by newline chars for internal processing. Both `LF` and `CRLF` separators are supported (detected automatically). 
 
 ### Partials
 
-The class supports partials (see example below). So you may prepare the templates in convenient and logical sections. And reuse them if necessary.
+The class supports partials (see example below). So you may prepare your templates in convenient and logical sections. And reuse them if necessary.
 
 ```abap
 lo_mustache = lcl_mustache=>create(
     'Welcome to {{shop_name}}!' && c_nl && 
-    '{{>items_template}}' ).
+    '{{>items_template}}' ).  " << Calling partial !
 
 lo_partial  = lcl_mustache=>create(
     '{{#items}}'                && c_nl &&
     '* {{name}} - ${{price}}'   && c_nl &&
     '{{/items}}' ).
 
-lo_mustache->add_partial( 
+lo_mustache->add_partial(     " Register partial
   iv_name = 'items_template' 
   io_obj  = lo_partial ).
 
@@ -130,7 +130,7 @@ Here are some stuff I might be implementing with time:
 * calling object methods for parts of data
 * references to object attributes (maybe, if will be needed)
 
-Still some real usage statics would be valuable to decide on this or that feature. 
+Still some real usage statistics would be valuable to decide on this or that feature. 
 
 ## Contribution
 
