@@ -40,9 +40,16 @@ CLASS lcx_mustache_error DEFINITION FINAL INHERITING FROM cx_static_check.
           msg TYPE string READ-ONLY.
 
     METHODS constructor
-      IMPORTING msg TYPE clike
-                rc  TYPE char4 OPTIONAL.
+      IMPORTING
+        msg TYPE clike
+        rc  TYPE char4 OPTIONAL.
 
+    CLASS-METHODS raise
+      IMPORTING
+        msg TYPE clike
+        rc  TYPE char4 OPTIONAL
+      RAISING
+        lcx_mustache_error.
 ENDCLASS. "lcx_mustache_error
 
 *----------------------------------------------------------------------*
@@ -55,6 +62,13 @@ CLASS lcx_mustache_error IMPLEMENTATION.
     me->msg = msg.
     me->rc  = rc.
   ENDMETHOD.  " constructor.
+
+  METHOD raise.
+    RAISE EXCEPTION TYPE lcx_mustache_error
+      EXPORTING
+        msg = msg
+        rc  = rc.
+  ENDMETHOD.
 
 ENDCLASS. "lcx_mustache_error
 
@@ -418,10 +432,9 @@ CLASS lcl_mustache_parser IMPLEMENTATION.
           MATCH OFFSET lv_off.
 
         IF sy-subrc > 0. " Closing tag not found !
-          RAISE EXCEPTION TYPE lcx_mustache_error
-            EXPORTING
-              msg = 'Closing }} not found'
-              rc  = 'CTNF'.
+          lcx_mustache_error=>raise(
+            msg = 'Closing }} not found'
+            rc  = 'CTNF' ).
         ENDIF.
 
         IF lv_ctag = '}}' AND lv_len - lv_off > 2 AND iv_template+lv_off(3) = '}}}'.
@@ -495,10 +508,9 @@ CLASS lcl_mustache_parser IMPLEMENTATION.
     lv_param = iv_chunk.
 
     IF strlen( lv_param ) = 0.
-      RAISE EXCEPTION TYPE lcx_mustache_error
-        EXPORTING
-          msg = 'Empty tag'
-          rc  = 'ET'.
+      lcx_mustache_error=>raise(
+        msg = 'Empty tag'
+        rc  = 'ET' ).
     ENDIF.
 
     IF lv_param(1) CA '#^/=!>&{'. " Get tag type
@@ -507,25 +519,22 @@ CLASS lcl_mustache_parser IMPLEMENTATION.
     ENDIF.
 
     IF strlen( lv_param ) = 0.
-      RAISE EXCEPTION TYPE lcx_mustache_error
-        EXPORTING
-          msg = 'Empty tag'
-          rc  = 'ET'.
+      lcx_mustache_error=>raise(
+        msg = 'Empty tag'
+        rc  = 'ET' ).
     ENDIF.
 
     IF lv_sigil CA '={'. " Check closing part of tag type
       lv_tail = substring( val = lv_param  off = strlen( lv_param ) - 1  len = 1 ).
       IF lv_sigil = '=' AND lv_tail <> '='.
-        RAISE EXCEPTION TYPE lcx_mustache_error
-          EXPORTING
-            msg = 'Missing closing ='
-            rc  = 'MC='.
+        lcx_mustache_error=>raise(
+          msg = 'Missing closing ='
+          rc  = 'MC=' ).
       ENDIF.
       IF lv_sigil = '{' AND lv_tail <> '}'.
-        RAISE EXCEPTION TYPE lcx_mustache_error
-          EXPORTING
-            msg = 'Missing closing }'
-            rc  = 'MC}'.
+        lcx_mustache_error=>raise(
+          msg = 'Missing closing }'
+          rc  = 'MC}' ).
       ENDIF.
       lv_param = substring( val = lv_param  len = strlen( lv_param ) - 1 ).
     ENDIF.
@@ -535,10 +544,9 @@ CLASS lcl_mustache_parser IMPLEMENTATION.
     SHIFT lv_param LEFT DELETING LEADING space.
 
     IF strlen( lv_param ) = 0.
-      RAISE EXCEPTION TYPE lcx_mustache_error
-        EXPORTING
-          msg = 'Empty tag'
-          rc  = 'ET'.
+      lcx_mustache_error=>raise(
+        msg = 'Empty tag'
+        rc  = 'ET' ).
     ENDIF.
 
     CASE lv_sigil.
@@ -559,10 +567,9 @@ CLASS lcl_mustache_parser IMPLEMENTATION.
         CONDENSE lv_param. " Remove unnecessary internal spaces too
         FIND ALL OCCURRENCES OF ` ` IN lv_param MATCH COUNT lv_cnt.
         IF lv_cnt <> 1. " Must contain one separating space
-          RAISE EXCEPTION TYPE lcx_mustache_error
-            EXPORTING
-              msg = |Change of delimiters failed: '{ lv_param }'|
-              rc  = 'CDF'.
+          lcx_mustache_error=>raise(
+            msg = |Change of delimiters failed: '{ lv_param }'|
+            rc  = 'CDF' ).
         ENDIF.
       WHEN '!'. " Comment
         rv_token-type = lcl_mustache=>c_token_type-comment.
@@ -605,18 +612,16 @@ CLASS lcl_mustache_parser IMPLEMENTATION.
         WHEN lcl_mustache=>c_token_type-section_end.
           lv_level = lv_level - 1.
           IF lv_level < 1.
-            RAISE EXCEPTION TYPE lcx_mustache_error
-              EXPORTING
-                msg = |Closing of non-opened section: { <token>-content }|
-                rc  = 'CNOS'.
+            lcx_mustache_error=>raise(
+              msg = |Closing of non-opened section: { <token>-content }|
+              rc  = 'CNOS' ).
           ENDIF.
 
           READ TABLE lt_stack INDEX lines( lt_stack ) ASSIGNING <section_name>.
           IF <section_name> <> <token>-content.
-            RAISE EXCEPTION TYPE lcx_mustache_error
-              EXPORTING
-                msg = |Closing section mismatch: { <section_name> } ({ lv_level })|
-                rc  = 'CSM'.
+            lcx_mustache_error=>raise(
+              msg = |Closing section mismatch: { <section_name> } ({ lv_level })|
+              rc  = 'CSM' ).
           ENDIF.
 
           DELETE lt_stack INDEX lines( lt_stack ). " Remove, not needed anymore
@@ -629,10 +634,9 @@ CLASS lcl_mustache_parser IMPLEMENTATION.
 
     IF lv_level > 1.
       READ TABLE lt_stack INDEX lines( lt_stack ) ASSIGNING <section_name>.
-      RAISE EXCEPTION TYPE lcx_mustache_error
-        EXPORTING
-          msg = |Section not closed: { <section_name> } ({ lv_level })|
-          rc  = 'SNC'.
+      lcx_mustache_error=>raise(
+        msg = |Section not closed: { <section_name> } ({ lv_level })|
+        rc  = 'SNC' ).
     ENDIF.
 
   ENDMETHOD.  " build_token_structure.
@@ -778,10 +782,9 @@ CLASS lcl_mustache_render IMPLEMENTATION.
       ENDLOOP.
 
     ELSE.
-      RAISE EXCEPTION TYPE lcx_mustache_error
-        EXPORTING
-          msg = |Cannot render section { iv_path }, wrong data item type|
-          rc  = 'CRWD'.
+      lcx_mustache_error=>raise(
+        msg = |Cannot render section { iv_path }, wrong data item type|
+        rc  = 'CRWD' ).
     ENDIF.
 
   ENDMETHOD.  " render_section.
@@ -847,18 +850,16 @@ CLASS lcl_mustache_render IMPLEMENTATION.
 
         WHEN lcl_mustache=>c_token_type-partial.
           IF is_statics-part_depth = C_MAX_PARTIALS_DEPTH.
-            RAISE EXCEPTION TYPE lcx_mustache_error
-              EXPORTING
-                msg = |Max partials depth reached ({ C_MAX_PARTIALS_DEPTH })|
-                rc  = 'MPD'.
+            lcx_mustache_error=>raise(
+              msg = |Max partials depth reached ({ C_MAX_PARTIALS_DEPTH })|
+              rc  = 'MPD' ).
           ENDIF.
 
           READ TABLE is_statics-partials ASSIGNING <partial> WITH KEY name = <token>-content.
           IF sy-subrc > 0.
-            RAISE EXCEPTION TYPE lcx_mustache_error
-              EXPORTING
-                msg = |Partial '{ <token>-content }' not found|
-                rc  = 'PNF'.
+            lcx_mustache_error=>raise(
+              msg = |Partial '{ <token>-content }' not found|
+              rc  = 'PNF' ).
           ENDIF.
 
           ls_statics-tokens      = <partial>-obj->mt_tokens.
@@ -898,10 +899,9 @@ CLASS lcl_mustache_render IMPLEMENTATION.
     DESCRIBE FIELD <field> TYPE lv_type.
 
     IF lv_type NA c_data_type-elem. " Element data type
-      RAISE EXCEPTION TYPE lcx_mustache_error
-        EXPORTING
-          msg = |Cannot convert { iv_name } to string|
-          rc  = 'CCTS'.
+      lcx_mustache_error=>raise(
+        msg = |Cannot convert { iv_name } to string|
+        rc  = 'CCTS' ).
     ENDIF.
 
     rv_val = <field>.
@@ -952,10 +952,9 @@ CLASS lcl_mustache_render IMPLEMENTATION.
     ELSEIF lv_type CA c_data_type-table.    " Table
       lo_type = cl_abap_typedescr=>describe_by_data_ref( lr ).
       IF lo_type->absolute_name <> c_ty_struc_tt_absolute_name.
-        RAISE EXCEPTION TYPE lcx_mustache_error
-          EXPORTING
-            msg = |Cannot find values in tables other than of ty_struc_tt type|
-            rc  = 'WTT'.
+        lcx_mustache_error=>raise(
+          msg = |Cannot find values in tables other than of ty_struc_tt type|
+          rc  = 'WTT' ).
       ENDIF.
 
       ASSIGN lr->* TO <table>.
@@ -972,10 +971,9 @@ CLASS lcl_mustache_render IMPLEMENTATION.
       ENDLOOP.
 
     ELSE.                     " Anything else is unsupported
-      RAISE EXCEPTION TYPE lcx_mustache_error
-        EXPORTING
-          msg = |Can find values in structures or ty_struc_tt tables only|
-          rc  = 'WVT'.
+      lcx_mustache_error=>raise(
+        msg = |Can find values in structures or ty_struc_tt tables only|
+        rc  = 'WVT' ).
     ENDIF.
 
     IF lv_found <> abap_true.
@@ -985,10 +983,9 @@ CLASS lcl_mustache_render IMPLEMENTATION.
                               it_data_stack = it_data_stack
                               iv_level      = iv_level - 1 ).
       ELSE.
-        RAISE EXCEPTION TYPE lcx_mustache_error
-          EXPORTING
-            msg = |Field '{ iv_name }' not found in supplied data|
-            rc  = 'FNF'.
+        lcx_mustache_error=>raise(
+          msg = |Field '{ iv_name }' not found in supplied data|
+          rc  = 'FNF' ).
       ENDIF.
     ENDIF.
 
@@ -1008,10 +1005,9 @@ CLASS lcl_mustache_render IMPLEMENTATION.
         ENDIF.
 
       WHEN OTHERS.
-        RAISE EXCEPTION TYPE lcx_mustache_error
-          EXPORTING
-            msg = |Unknown condition '{ iv_cond }'|
-            rc  = 'UC'.
+        lcx_mustache_error=>raise(
+          msg = |Unknown condition '{ iv_cond }'|
+          rc  = 'UC' ).
     ENDCASE.
 
   ENDMETHOD. "eval_condition
@@ -1071,18 +1067,16 @@ CLASS lcl_mustache IMPLEMENTATION.
     FIELD-SYMBOLS <p> LIKE LINE OF mt_partials.
 
     IF io_obj IS NOT BOUND.
-      RAISE EXCEPTION TYPE lcx_mustache_error
-        EXPORTING
-          msg = 'Partial object is not bound'
-          rc  = 'PONB'.
+      lcx_mustache_error=>raise(
+        msg = 'Partial object is not bound'
+        rc  = 'PONB' ).
     ENDIF.
 
     READ TABLE mt_partials TRANSPORTING NO FIELDS WITH KEY name = iv_name.
     IF sy-subrc = 0.
-      RAISE EXCEPTION TYPE lcx_mustache_error
-        EXPORTING
-          msg = |Duplicate partial '{ iv_name }'|
-          rc  = 'DP'.
+      lcx_mustache_error=>raise(
+        msg = |Duplicate partial '{ iv_name }'|
+        rc  = 'DP' ).
     ENDIF.
 
     APPEND INITIAL LINE TO mt_partials ASSIGNING <p>.
