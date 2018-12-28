@@ -1,13 +1,9 @@
-*&---------------------------------------------------------------------*
-*&  Include           ZABAP_MUSTACHE
-*&---------------------------------------------------------------------*
-
 */--------------------------------------------------------------------------------\
 *| This file is part of ABAP MUSTACHE                                             |
 *|                                                                                |
 *| The MIT License (MIT)                                                          |
 *|                                                                                |
-*| Copyright (c) 2017 Alexander Tsybulsky (atsybulsky@sbcg.com.ua)                |
+*| Copyright (c) 2018 Alexander Tsybulsky (atsybulsky@sbcg.com.ua)                |
 *|                                                                                |
 *| Permission is hereby granted, free of charge, to any person obtaining a copy   |
 *| of this software and associated documentation files (the "Software"), to deal  |
@@ -119,13 +115,12 @@ ENDCLASS. "lcl_mustache_utils
 * MUSTACHE LOGIC
 **********************************************************************
 
-CLASS ltcl_mustache DEFINITION DEFERRED.
-
 *----------------------------------------------------------------------*
 *       CLASS lcl_mustache DEFINITION
 *----------------------------------------------------------------------*
+CLASS lcl_mustache_lib DEFINITION DEFERRED.
 CLASS lcl_mustache DEFINITION FINAL
-  FRIENDS ltcl_mustache.
+  FRIENDS lcl_mustache_lib.
 
   PUBLIC SECTION.
 
@@ -189,44 +184,73 @@ CLASS lcl_mustache DEFINITION FINAL
         ifnot       TYPE ty_token-cond VALUE '!',   " unless
       END OF c_section_condition.
 
+    " METHODS **********************************************************
+
+    CLASS-METHODS create
+      IMPORTING
+        iv_template TYPE string       OPTIONAL
+        it_template TYPE string_table OPTIONAL
+        iv_x_format TYPE ty_x_format  DEFAULT cl_abap_format=>e_html_text
+      PREFERRED
+        PARAMETER iv_template
+      RETURNING
+        VALUE(ro_instance) TYPE REF TO lcl_mustache
+      RAISING
+        lcx_mustache_error.
+
+    METHODS constructor
+      IMPORTING
+        iv_template TYPE string       OPTIONAL
+        it_template TYPE string_table OPTIONAL
+        iv_x_format TYPE ty_x_format  DEFAULT cl_abap_format=>e_html_text
+      PREFERRED PARAMETER iv_template
+      RAISING
+        lcx_mustache_error.
+
+    METHODS render
+      IMPORTING
+        i_data         TYPE any
+      RETURNING
+        VALUE(rv_text) TYPE string
+      RAISING
+        lcx_mustache_error.
+
+    METHODS render_tt
+      IMPORTING
+        i_data         TYPE any
+      RETURNING
+        VALUE(rt_tab)  TYPE string_table
+      RAISING
+        lcx_mustache_error.
+
+    METHODS add_partial
+      IMPORTING
+        iv_name TYPE string
+        io_obj  TYPE REF TO lcl_mustache
+      RAISING
+        lcx_mustache_error.
+
+    METHODS get_partials
+      RETURNING
+        VALUE(rt_partials) TYPE ty_partial_tt.
+
+  PRIVATE SECTION.
+    DATA mt_tokens   TYPE ty_token_tt.
+    DATA mt_partials TYPE ty_partial_tt.
+    DATA mv_x_format TYPE ty_x_format.
+
+ENDCLASS. "lcl_mustache
+
+*----------------------------------------------------------------------*
+*       CLASS lcl_mustache_lib
+*----------------------------------------------------------------------*
+
+CLASS lcl_mustache_lib DEFINITION FINAL.
+  PUBLIC SECTION.
+
     CONSTANTS:
       " Max depth of partials recursion, feel free to change for your needs
       C_MAX_PARTIALS_DEPTH TYPE i VALUE 10.
-
-    " METHODS **********************************************************
-
-    CLASS-METHODS class_constructor.
-    CLASS-METHODS create
-      IMPORTING iv_template TYPE string       OPTIONAL
-                it_template TYPE string_table OPTIONAL
-                iv_x_format TYPE ty_x_format  DEFAULT cl_abap_format=>e_html_text
-      PREFERRED PARAMETER iv_template
-      RETURNING VALUE(ro_instance) TYPE REF TO lcl_mustache
-      RAISING lcx_mustache_error.
-
-    METHODS constructor
-      IMPORTING iv_template TYPE string       OPTIONAL
-                it_template TYPE string_table OPTIONAL
-                iv_x_format TYPE ty_x_format  DEFAULT cl_abap_format=>e_html_text
-      PREFERRED PARAMETER iv_template
-      RAISING lcx_mustache_error.
-
-    METHODS render
-      IMPORTING i_data         TYPE any
-      RETURNING VALUE(rv_text) TYPE string
-      RAISING lcx_mustache_error.
-
-    METHODS render_tt
-      IMPORTING i_data         TYPE any
-      RETURNING VALUE(rt_tab)  TYPE string_table
-      RAISING lcx_mustache_error.
-
-    METHODS add_partial
-      IMPORTING iv_name TYPE string
-                io_obj  TYPE REF TO lcl_mustache
-      RAISING lcx_mustache_error.
-
-  PRIVATE SECTION.
 
     CONSTANTS:
       BEGIN OF c_data_type,
@@ -235,127 +259,104 @@ CLASS lcl_mustache DEFINITION FINAL
         table TYPE char1  VALUE 'h',
       END OF c_data_type.
 
-    CLASS-DATA: C_TY_STRUC_TT_ABSOLUTE_NAME TYPE abap_abstypename.
-
-    DATA:
-          mt_tokens   TYPE ty_token_tt,
-          mt_partials TYPE ty_partial_tt,
-          mv_x_format TYPE ty_x_format.
-
     CLASS-METHODS parse_template
-      IMPORTING iv_template      TYPE string       OPTIONAL
-                it_template      TYPE string_table OPTIONAL
+      IMPORTING
+        iv_template      TYPE string       OPTIONAL
+        it_template      TYPE string_table OPTIONAL
       PREFERRED PARAMETER iv_template
-      RETURNING VALUE(rt_tokens) TYPE ty_token_tt
-      RAISING lcx_mustache_error.
+      RETURNING
+        VALUE(rt_tokens) TYPE lcl_mustache=>ty_token_tt
+      RAISING
+        lcx_mustache_error.
 
     CLASS-METHODS tokenize
-      IMPORTING iv_template       TYPE string
-      EXPORTING et_tokens         TYPE ty_token_tt
-                ev_lonely_section TYPE abap_bool
-      RAISING lcx_mustache_error.
+      IMPORTING
+        iv_template       TYPE string
+      EXPORTING
+        et_tokens         TYPE lcl_mustache=>ty_token_tt
+        ev_lonely_section TYPE abap_bool
+      RAISING
+        lcx_mustache_error.
 
     CLASS-METHODS parse_tag
-      IMPORTING iv_chunk        TYPE string
-      RETURNING VALUE(rv_token) TYPE ty_token
-      RAISING lcx_mustache_error.
+      IMPORTING
+        iv_chunk        TYPE string
+      RETURNING
+        VALUE(rv_token) TYPE lcl_mustache=>ty_token
+      RAISING
+        lcx_mustache_error.
 
     CLASS-METHODS build_token_structure
-      CHANGING ct_tokens TYPE ty_token_tt
-      RAISING lcx_mustache_error.
+      CHANGING
+        ct_tokens TYPE lcl_mustache=>ty_token_tt
+      RAISING
+        lcx_mustache_error.
 
     CLASS-METHODS render_section
-      IMPORTING is_statics    TYPE ty_context
-                i_data        TYPE any
-                it_data_stack TYPE ty_ref_tt     OPTIONAL
-                iv_start_idx  TYPE i             DEFAULT 1
-                iv_path       TYPE string        DEFAULT '/'
-      CHANGING  ct_lines      TYPE string_table
-      RAISING lcx_mustache_error.
+      IMPORTING
+        is_statics    TYPE lcl_mustache=>ty_context
+        i_data        TYPE any
+        it_data_stack TYPE lcl_mustache=>ty_ref_tt     OPTIONAL
+        iv_start_idx  TYPE i             DEFAULT 1
+        iv_path       TYPE string        DEFAULT '/'
+      CHANGING
+        ct_lines      TYPE string_table
+      RAISING
+        lcx_mustache_error.
 
     CLASS-METHODS render_loop
-      IMPORTING is_statics    TYPE ty_context
-                it_data_stack TYPE ty_ref_tt
-                iv_start_idx  TYPE i
-                iv_path       TYPE string
-      CHANGING  ct_lines      TYPE string_table
-      RAISING lcx_mustache_error.
+      IMPORTING
+        is_statics    TYPE lcl_mustache=>ty_context
+        it_data_stack TYPE lcl_mustache=>ty_ref_tt
+        iv_start_idx  TYPE i
+        iv_path       TYPE string
+      CHANGING
+        ct_lines      TYPE string_table
+      RAISING
+        lcx_mustache_error.
 
     CLASS-METHODS find_value
-      IMPORTING iv_name       TYPE string
-                it_data_stack TYPE ty_ref_tt
-      RETURNING VALUE(rv_val) TYPE string
-      RAISING lcx_mustache_error.
+      IMPORTING
+        iv_name       TYPE string
+        it_data_stack TYPE lcl_mustache=>ty_ref_tt
+      RETURNING
+        VALUE(rv_val) TYPE string
+      RAISING
+        lcx_mustache_error.
 
     CLASS-METHODS find_walker
-      IMPORTING iv_name       TYPE string
-                it_data_stack TYPE ty_ref_tt
-                iv_level      TYPE i
-      RETURNING VALUE(rv_ref) TYPE REF TO data
-      RAISING lcx_mustache_error.
+      IMPORTING
+        iv_name       TYPE string
+        it_data_stack TYPE lcl_mustache=>ty_ref_tt
+        iv_level      TYPE i
+      RETURNING
+        VALUE(rv_ref) TYPE REF TO data
+      RAISING
+        lcx_mustache_error.
 
     CLASS-METHODS eval_condition
-      IMPORTING iv_var           TYPE any
-                iv_cond          TYPE ty_token-cond
-      RETURNING VALUE(rv_result) TYPE abap_bool
-      RAISING lcx_mustache_error.
+      IMPORTING
+        iv_var           TYPE any
+        iv_cond          TYPE lcl_mustache=>ty_token-cond
+      RETURNING
+        VALUE(rv_result) TYPE abap_bool
+      RAISING
+        lcx_mustache_error.
 
+    CLASS-METHODS class_constructor.
 
-ENDCLASS. "lcl_mustache
+  PRIVATE SECTION.
 
-*----------------------------------------------------------------------*
-*       CLASS lcl_mustache IMPLEMENTATION
-*----------------------------------------------------------------------*
-CLASS lcl_mustache IMPLEMENTATION.
+    CLASS-DATA: c_ty_struc_tt_absolute_name TYPE abap_abstypename.
+
+ENDCLASS.
+
+CLASS lcl_mustache_lib IMPLEMENTATION.
 
   METHOD class_constructor.
-    DATA lt_dummy TYPE ty_struc_tt.
-    c_ty_struc_tt_absolute_name =
-      cl_abap_typedescr=>describe_by_data( lt_dummy )->absolute_name.
+    DATA lt_dummy TYPE lcl_mustache=>ty_struc_tt.
+    c_ty_struc_tt_absolute_name = cl_abap_typedescr=>describe_by_data( lt_dummy )->absolute_name.
   ENDMETHOD. "class_constructor
-
-  METHOD create.
-    CREATE OBJECT ro_instance
-      EXPORTING
-        iv_template = iv_template
-        it_template = it_template
-        iv_x_format = iv_x_format.
-  ENDMETHOD. " create.
-
-  METHOD constructor.
-    mv_x_format = iv_x_format.
-    mt_tokens   = parse_template(
-      iv_template = iv_template
-      it_template = it_template ).
-  ENDMETHOD.  " constructor.
-
-  METHOD render_tt.
-
-    rt_tab = lcl_mustache_utils=>split_string(
-      iv_sep  = cl_abap_char_utilities=>newline
-      iv_text = render( i_data ) ).
-
-  ENDMETHOD.  " render_tt.
-
-  METHOD render.
-
-    DATA: lt_temp    TYPE string_table,
-          ls_statics TYPE ty_context.
-
-    ls_statics-tokens   = mt_tokens.
-    ls_statics-partials = mt_partials.
-    ls_statics-x_format = mv_x_format.
-
-    render_section(
-      EXPORTING
-        is_statics  = ls_statics
-        i_data      = i_data
-      CHANGING
-        ct_lines = lt_temp ).
-
-    rv_text = lcl_mustache_utils=>join_strings( it_tab = lt_temp iv_sep = '' ).
-
-  ENDMETHOD.  " render.
 
   METHOD parse_template.
 
@@ -377,7 +378,7 @@ CLASS lcl_mustache IMPLEMENTATION.
       lt_strings = lcl_mustache_utils=>split_string( iv_template ).
     ENDIF.
 
-    ls_newline_token-type    = c_token_type-static.
+    ls_newline_token-type    = lcl_mustache=>c_token_type-static.
     ls_newline_token-content = cl_abap_char_utilities=>newline.
 
     LOOP AT lt_strings ASSIGNING <line>.
@@ -398,35 +399,6 @@ CLASS lcl_mustache IMPLEMENTATION.
     build_token_structure( changing ct_tokens = rt_tokens ).
 
   ENDMETHOD.  " parse_template.
-
-  METHOD add_partial.
-
-    FIELD-SYMBOLS <p> LIKE LINE OF mt_partials.
-
-    IF io_obj IS NOT BOUND.
-      RAISE EXCEPTION TYPE lcx_mustache_error
-        EXPORTING
-          msg = 'Partial object is not bound'
-          rc  = 'PONB'.
-    ENDIF.
-
-    READ TABLE mt_partials TRANSPORTING NO FIELDS WITH KEY name = iv_name.
-    IF sy-subrc = 0.
-      RAISE EXCEPTION TYPE lcx_mustache_error
-        EXPORTING
-          msg = |Duplicate partial '{ iv_name }'|
-          rc  = 'DP'.
-    ENDIF.
-
-    APPEND INITIAL LINE TO mt_partials ASSIGNING <p>.
-    <p>-name = iv_name.
-    <p>-obj  = io_obj.
-
-  ENDMETHOD.  " add_partial
-
-**********************************************************************
-* PARSER
-**********************************************************************
 
   METHOD tokenize.
 
@@ -467,12 +439,12 @@ CLASS lcl_mustache IMPLEMENTATION.
                                         off = lv_cur
                                         len = lv_off - lv_cur ) ).
 
-        IF NOT ( <token>-type = c_token_type-section OR <token>-type = c_token_type-section_end ).
+        IF NOT ( <token>-type = lcl_mustache=>c_token_type-section OR <token>-type = lcl_mustache=>c_token_type-section_end ).
           " Any tag other than section makes it not lonely
           CLEAR ev_lonely_section.
         ENDIF.
 
-        IF <token>-type = c_token_type-delimiter. " Change open/close tags
+        IF <token>-type = lcl_mustache=>c_token_type-delimiter. " Change open/close tags
           SPLIT <token>-content AT ` ` INTO lv_otag lv_ctag.
         ENDIF.
 
@@ -492,7 +464,7 @@ CLASS lcl_mustache IMPLEMENTATION.
 
         IF lv_off > lv_cur. " Append unempty static token
           APPEND INITIAL LINE TO et_tokens ASSIGNING <token>.
-          <token>-type    = c_token_type-static.
+          <token>-type    = lcl_mustache=>c_token_type-static.
           <token>-content = substring( val = iv_template
                                        off = lv_cur
                                        len = lv_off - lv_cur ).
@@ -514,7 +486,7 @@ CLASS lcl_mustache IMPLEMENTATION.
 
     IF ev_lonely_section = abap_true.
       " Delete all static content at lonely section line
-      DELETE et_tokens WHERE type = c_token_type-static.
+      DELETE et_tokens WHERE type = lcl_mustache=>c_token_type-static.
     ENDIF.
 
   ENDMETHOD.  " tokenize.
@@ -577,19 +549,19 @@ CLASS lcl_mustache IMPLEMENTATION.
 
     CASE lv_sigil.
       WHEN ''.
-        rv_token-type = c_token_type-etag.
+        rv_token-type = lcl_mustache=>c_token_type-etag.
       WHEN '&' OR '{'.
-        rv_token-type = c_token_type-utag.
+        rv_token-type = lcl_mustache=>c_token_type-utag.
       WHEN '#'.
-        rv_token-type = c_token_type-section.
-        rv_token-cond = c_section_condition-if.
+        rv_token-type = lcl_mustache=>c_token_type-section.
+        rv_token-cond = lcl_mustache=>c_section_condition-if.
       WHEN '^'.
-        rv_token-type = c_token_type-section.
-        rv_token-cond = c_section_condition-ifnot.
+        rv_token-type = lcl_mustache=>c_token_type-section.
+        rv_token-cond = lcl_mustache=>c_section_condition-ifnot.
       WHEN '/'.
-        rv_token-type = c_token_type-section_end.
+        rv_token-type = lcl_mustache=>c_token_type-section_end.
       WHEN '='.
-        rv_token-type = c_token_type-delimiter.
+        rv_token-type = lcl_mustache=>c_token_type-delimiter.
         CONDENSE lv_param. " Remove unnecessary internal spaces too
         FIND ALL OCCURRENCES OF ` ` IN lv_param MATCH COUNT lv_cnt.
         IF lv_cnt <> 1. " Must contain one separating space
@@ -599,9 +571,9 @@ CLASS lcl_mustache IMPLEMENTATION.
               rc  = 'CDF'.
         ENDIF.
       WHEN '!'. " Comment
-        rv_token-type = c_token_type-comment.
+        rv_token-type = lcl_mustache=>c_token_type-comment.
       WHEN '>'.
-        rv_token-type = c_token_type-partial.
+        rv_token-type = lcl_mustache=>c_token_type-partial.
       WHEN OTHERS.
         ASSERT 0 = 1. " Cannot reach, programming error
     ENDCASE.
@@ -626,17 +598,17 @@ CLASS lcl_mustache IMPLEMENTATION.
       lv_idx        = sy-tabix.
 
       CASE <token>-type.
-        WHEN c_token_type-comment.
+        WHEN lcl_mustache=>c_token_type-comment.
           DELETE ct_tokens INDEX lv_idx. " Ignore comments
 
-        WHEN c_token_type-delimiter.
+        WHEN lcl_mustache=>c_token_type-delimiter.
           DELETE ct_tokens INDEX lv_idx. " They served their purpose in tokenize
 
-        WHEN c_token_type-section.
+        WHEN lcl_mustache=>c_token_type-section.
           lv_level = lv_level + 1.
           APPEND <token>-content TO lt_stack.
 
-        WHEN c_token_type-section_end.
+        WHEN lcl_mustache=>c_token_type-section_end.
           lv_level = lv_level - 1.
           IF lv_level < 1.
             RAISE EXCEPTION TYPE lcx_mustache_error
@@ -670,10 +642,6 @@ CLASS lcl_mustache IMPLEMENTATION.
     ENDIF.
 
   ENDMETHOD.  " build_token_structure.
-
-**********************************************************************
-* RENDERER
-**********************************************************************
 
   METHOD render_section.
 
@@ -741,7 +709,7 @@ CLASS lcl_mustache IMPLEMENTATION.
 
     DATA:
           lr         TYPE REF TO data,
-          ls_statics TYPE ty_context,
+          ls_statics TYPE lcl_mustache=>ty_context,
           lv_level   TYPE i,
           lv_idx     TYPE i,
           lv_val     TYPE string.
@@ -768,17 +736,17 @@ CLASS lcl_mustache IMPLEMENTATION.
       ENDIF.
 
       CASE <token>-type.
-        WHEN c_token_type-static.                     " Static particle
+        WHEN lcl_mustache=>c_token_type-static.                     " Static particle
           APPEND <token>-content TO ct_lines.
 
-        WHEN c_token_type-etag OR c_token_type-utag.  " Single tag
+        WHEN lcl_mustache=>c_token_type-etag OR lcl_mustache=>c_token_type-utag.  " Single tag
           lv_val  = find_value( iv_name = <token>-content  it_data_stack = it_data_stack ).
-          IF <token>-type = c_token_type-etag AND is_statics-x_format IS NOT INITIAL.
+          IF <token>-type = lcl_mustache=>c_token_type-etag AND is_statics-x_format IS NOT INITIAL.
             lv_val = escape( val = lv_val format = is_statics-x_format ).
           ENDIF.
           APPEND lv_val TO ct_lines.
 
-        WHEN c_token_type-section.
+        WHEN lcl_mustache=>c_token_type-section.
           lr = find_walker( iv_name       = <token>-content
                             it_data_stack = it_data_stack
                             iv_level      = lines( it_data_stack ) ). " Start from deepest level
@@ -796,7 +764,7 @@ CLASS lcl_mustache IMPLEMENTATION.
                 ct_lines      = ct_lines ).
           ENDIF.
 
-        WHEN c_token_type-partial.
+        WHEN lcl_mustache=>c_token_type-partial.
           IF is_statics-part_depth = C_MAX_PARTIALS_DEPTH.
             RAISE EXCEPTION TYPE lcx_mustache_error
               EXPORTING
@@ -870,7 +838,7 @@ CLASS lcl_mustache IMPLEMENTATION.
 
     FIELD-SYMBOLS: <field> TYPE any,
                    <struc> TYPE any,
-                   <rec>   TYPE ty_struc,
+                   <rec>   TYPE lcl_mustache=>ty_struc,
                    <table> TYPE ANY TABLE.
 
     lv_name_upper = to_upper( iv_name ).
@@ -948,12 +916,12 @@ CLASS lcl_mustache IMPLEMENTATION.
   METHOD eval_condition.
 
     CASE iv_cond.
-      WHEN c_section_condition-if.
+      WHEN lcl_mustache=>c_section_condition-if.
         IF iv_var IS NOT INITIAL.
           rv_result = abap_true.
         ENDIF.
 
-      WHEN c_section_condition-ifnot.
+      WHEN lcl_mustache=>c_section_condition-ifnot.
         IF iv_var IS INITIAL.
           rv_result = abap_true.
         ENDIF.
@@ -966,5 +934,84 @@ CLASS lcl_mustache IMPLEMENTATION.
     ENDCASE.
 
   ENDMETHOD. "eval_condition
+
+ENDCLASS.
+
+*----------------------------------------------------------------------*
+*       CLASS lcl_mustache IMPLEMENTATION
+*----------------------------------------------------------------------*
+CLASS lcl_mustache IMPLEMENTATION.
+
+  METHOD create.
+    CREATE OBJECT ro_instance
+      EXPORTING
+        iv_template = iv_template
+        it_template = it_template
+        iv_x_format = iv_x_format.
+  ENDMETHOD. " create.
+
+  METHOD constructor.
+    mv_x_format = iv_x_format.
+    mt_tokens   = lcl_mustache_lib=>parse_template(
+      iv_template = iv_template
+      it_template = it_template ).
+  ENDMETHOD.  " constructor.
+
+  METHOD render_tt.
+
+    rt_tab = lcl_mustache_utils=>split_string(
+      iv_sep  = cl_abap_char_utilities=>newline
+      iv_text = render( i_data ) ).
+
+  ENDMETHOD.  " render_tt.
+
+  METHOD render.
+
+    DATA: lt_temp    TYPE string_table,
+          ls_statics TYPE ty_context.
+
+    ls_statics-tokens   = mt_tokens.
+    ls_statics-partials = mt_partials.
+    ls_statics-x_format = mv_x_format.
+
+    lcl_mustache_lib=>render_section(
+      EXPORTING
+        is_statics  = ls_statics
+        i_data      = i_data
+      CHANGING
+        ct_lines = lt_temp ).
+
+    rv_text = lcl_mustache_utils=>join_strings( it_tab = lt_temp iv_sep = '' ).
+
+  ENDMETHOD.  " render.
+
+  METHOD add_partial.
+
+    FIELD-SYMBOLS <p> LIKE LINE OF mt_partials.
+
+    IF io_obj IS NOT BOUND.
+      RAISE EXCEPTION TYPE lcx_mustache_error
+        EXPORTING
+          msg = 'Partial object is not bound'
+          rc  = 'PONB'.
+    ENDIF.
+
+    READ TABLE mt_partials TRANSPORTING NO FIELDS WITH KEY name = iv_name.
+    IF sy-subrc = 0.
+      RAISE EXCEPTION TYPE lcx_mustache_error
+        EXPORTING
+          msg = |Duplicate partial '{ iv_name }'|
+          rc  = 'DP'.
+    ENDIF.
+
+    APPEND INITIAL LINE TO mt_partials ASSIGNING <p>.
+    <p>-name = iv_name.
+    <p>-obj  = io_obj.
+
+  ENDMETHOD.  " add_partial
+
+  METHOD get_partials.
+    rt_partials = mt_partials.
+  ENDMETHOD.
 
 ENDCLASS. "lcl_mustache

@@ -79,12 +79,12 @@ CLASS ltcl_mustache_utils IMPLEMENTATION.
 ENDCLASS. "ltcl_mustache_utils
 
 *----------------------------------------------------------------------*
-*       CLASS ltcl_mustache DEFINITION
+*       CLASS ltcl_mustache
 *----------------------------------------------------------------------*
 CLASS ltcl_mustache DEFINITION FINAL
   FOR TESTING RISK LEVEL HARMLESS DURATION SHORT.
 
-  PRIVATE SECTION.
+  PUBLIC SECTION.
 
     TYPES:
       BEGIN OF ty_dummy,
@@ -125,9 +125,9 @@ CLASS ltcl_mustache DEFINITION FINAL
       ty_test_case_tt TYPE STANDARD TABLE OF ty_test_case WITH DEFAULT KEY.
 
     CONSTANTS c_nl TYPE c VALUE cl_abap_char_utilities=>newline.
-    CLASS-DATA gt_test_case_stash TYPE ty_test_case_tt.
 
-    CLASS-METHODS class_setup.
+    CLASS-DATA gt_test_case_stash TYPE ty_test_case_tt READ-ONLY.
+
     CLASS-METHODS get_test_case
       IMPORTING iv_index    TYPE i OPTIONAL
       EXPORTING ev_count        TYPE i
@@ -138,6 +138,10 @@ CLASS ltcl_mustache DEFINITION FINAL
     CLASS-METHODS get_test_data
       EXPORTING es_simple   TYPE ty_dummy
                 et_complex  TYPE lcl_mustache=>ty_struc_tt.
+
+  PRIVATE SECTION.
+
+    CLASS-METHODS class_setup.
 
     METHODS parse_template          FOR TESTING.
     METHODS parse_template_table    FOR TESTING.
@@ -153,9 +157,6 @@ CLASS ltcl_mustache DEFINITION FINAL
 
 ENDCLASS. "ltcl_mustache
 
-*----------------------------------------------------------------------*
-*       CLASS ltcl_mustache IMPLEMENTATION
-*----------------------------------------------------------------------*
 CLASS ltcl_mustache IMPLEMENTATION.
 
   METHOD class_setup.
@@ -383,7 +384,7 @@ CLASS ltcl_mustache IMPLEMENTATION.
                                et_tokens   = lt_exp ).
 
       TRY .
-        lt_act = lcl_mustache=>parse_template( lv_template ).
+        lt_act = lcl_mustache_lib=>parse_template( lv_template ).
         cl_abap_unit_assert=>assert_equals(
           exp = lt_exp
           act = lt_act
@@ -412,7 +413,7 @@ CLASS ltcl_mustache IMPLEMENTATION.
     LOOP AT lt_tab ASSIGNING <rcline>.
       CLEAR lx.
       TRY .
-        lcl_mustache=>parse_template( <rcline>-val ).
+        lcl_mustache_lib=>parse_template( <rcline>-val ).
       CATCH lcx_mustache_error INTO lx.
         ASSERT 1 = 1.
       ENDTRY.
@@ -447,7 +448,7 @@ CLASS ltcl_mustache IMPLEMENTATION.
     _add_mu_token lt_exp lcl_mustache=>c_token_type-static      ''  2   c_nl.
 
     TRY.
-      lt_act = lcl_mustache=>parse_template( it_template = lt_template ).
+      lt_act = lcl_mustache_lib=>parse_template( it_template = lt_template ).
     CATCH lcx_mustache_error INTO lx.
       cl_abap_unit_assert=>fail( lx->msg ).
     ENDTRY.
@@ -465,15 +466,15 @@ CLASS ltcl_mustache IMPLEMENTATION.
     FIELD-SYMBOLS <token> LIKE LINE OF lt_exp.
 
     TRY .
-      APPEND lcl_mustache=>parse_tag( 'name' ) TO lt_act.
-      APPEND lcl_mustache=>parse_tag( '{ name }' ) TO lt_act.
-      APPEND lcl_mustache=>parse_tag( '&name' ) TO lt_act.
-      APPEND lcl_mustache=>parse_tag( '#name' ) TO lt_act.
-      APPEND lcl_mustache=>parse_tag( '# name ' ) TO lt_act.
-      APPEND lcl_mustache=>parse_tag( '^name' ) TO lt_act.
-      APPEND lcl_mustache=>parse_tag( '/name' ) TO lt_act.
-      APPEND lcl_mustache=>parse_tag( '!name' ) TO lt_act.
-      APPEND lcl_mustache=>parse_tag( '= {*  *} =' ) TO lt_act.
+      APPEND lcl_mustache_lib=>parse_tag( 'name' ) TO lt_act.
+      APPEND lcl_mustache_lib=>parse_tag( '{ name }' ) TO lt_act.
+      APPEND lcl_mustache_lib=>parse_tag( '&name' ) TO lt_act.
+      APPEND lcl_mustache_lib=>parse_tag( '#name' ) TO lt_act.
+      APPEND lcl_mustache_lib=>parse_tag( '# name ' ) TO lt_act.
+      APPEND lcl_mustache_lib=>parse_tag( '^name' ) TO lt_act.
+      APPEND lcl_mustache_lib=>parse_tag( '/name' ) TO lt_act.
+      APPEND lcl_mustache_lib=>parse_tag( '!name' ) TO lt_act.
+      APPEND lcl_mustache_lib=>parse_tag( '= {*  *} =' ) TO lt_act.
     CATCH lcx_mustache_error INTO lx.
       cl_abap_unit_assert=>fail( lx->msg ).
     ENDTRY.
@@ -514,7 +515,7 @@ CLASS ltcl_mustache IMPLEMENTATION.
     LOOP AT lt_tab ASSIGNING <rcline>.
       CLEAR lx.
       TRY .
-        lcl_mustache=>parse_tag( <rcline>-val ).
+        lcl_mustache_lib=>parse_tag( <rcline>-val ).
       CATCH lcx_mustache_error INTO lx.
         ASSERT 1 = 1.
       ENDTRY.
@@ -544,7 +545,7 @@ CLASS ltcl_mustache IMPLEMENTATION.
     APPEND lr TO lt_data_stack.
 
     TRY .
-      lv_act = lcl_mustache=>find_value( it_data_stack = lt_data_stack iv_name = 'NAME' ).
+      lv_act = lcl_mustache_lib=>find_value( it_data_stack = lt_data_stack iv_name = 'NAME' ).
       cl_abap_unit_assert=>assert_equals( exp = 'abc' act = lv_act ).
     CATCH lcx_mustache_error INTO lx.
       cl_abap_unit_assert=>fail( lx->msg ).
@@ -556,7 +557,7 @@ CLASS ltcl_mustache IMPLEMENTATION.
     APPEND lr TO lt_data_stack.
 
     TRY .
-      lv_act = lcl_mustache=>find_value( it_data_stack = lt_data_stack iv_name = 'Abc' ).
+      lv_act = lcl_mustache_lib=>find_value( it_data_stack = lt_data_stack iv_name = 'Abc' ).
       cl_abap_unit_assert=>assert_equals( exp = '123' act = lv_act ).
     CATCH lcx_mustache_error INTO lx.
       cl_abap_unit_assert=>fail( lx->msg ).
@@ -570,9 +571,9 @@ CLASS ltcl_mustache IMPLEMENTATION.
     APPEND lr TO lt_data_stack.
 
     TRY .
-      lv_act = lcl_mustache=>find_value( it_data_stack = lt_data_stack iv_name = 'Abc' ).
+      lv_act = lcl_mustache_lib=>find_value( it_data_stack = lt_data_stack iv_name = 'Abc' ).
       cl_abap_unit_assert=>assert_equals( exp = '123' act = lv_act ).
-      lv_act = lcl_mustache=>find_value( it_data_stack = lt_data_stack iv_name = 'name' ).
+      lv_act = lcl_mustache_lib=>find_value( it_data_stack = lt_data_stack iv_name = 'name' ).
       cl_abap_unit_assert=>assert_equals( exp = 'abc' act = lv_act ).
     CATCH lcx_mustache_error INTO lx.
       cl_abap_unit_assert=>fail( lx->msg ).
@@ -609,14 +610,14 @@ CLASS ltcl_mustache IMPLEMENTATION.
       CLEAR lt_act.
       TRY .
         IF iv_complex_test = abap_true.
-          lcl_mustache=>render_section(
+          lcl_mustache_lib=>render_section(
             EXPORTING
               is_statics = ls_statics
               i_data     = lt_complex
             CHANGING
               ct_lines   = lt_act ).
         ELSE.
-          lcl_mustache=>render_section(
+          lcl_mustache_lib=>render_section(
             EXPORTING
               is_statics = ls_statics
               i_data     = ls_simple
@@ -762,7 +763,7 @@ CLASS ltcl_mustache IMPLEMENTATION.
       lo_mustache->add_partial( iv_name = 'partial1' io_obj = lo_partial ).
 
       cl_abap_unit_assert=>assert_equals(
-        act = lines( lo_mustache->mt_partials )
+        act = lines( lo_mustache->get_partials( ) )
         exp = 1 ).
     CATCH lcx_mustache_error INTO lx.
       cl_abap_unit_assert=>fail( lx->msg ).
