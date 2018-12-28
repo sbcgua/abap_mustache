@@ -146,6 +146,7 @@ CLASS lcl_mustache DEFINITION FINAL
         name TYPE string,
         val  TYPE string,
         dref TYPE REF TO data,
+        oref TYPE REF TO object,
       END OF ty_struc,
       ty_struc_tt TYPE STANDARD TABLE OF ty_struc WITH KEY name.
 
@@ -240,6 +241,73 @@ CLASS lcl_mustache DEFINITION FINAL
     DATA mv_x_format TYPE ty_x_format.
 
 ENDCLASS. "lcl_mustache
+
+*----------------------------------------------------------------------*
+*       CLASS lcl_mustache_parser
+*----------------------------------------------------------------------*
+CLASS lcl_mustache_data DEFINITION FINAL.
+  PUBLIC SECTION.
+
+    CLASS-METHODS get_for
+      IMPORTING
+        iv_name TYPE string
+        iv_val  TYPE any
+      RETURNING
+        VALUE(rt_data) TYPE lcl_mustache=>ty_struc_tt.
+
+    METHODS add
+      IMPORTING
+        iv_name TYPE string
+        iv_val  TYPE any.
+
+    METHODS get
+      RETURNING
+        VALUE(rt_data) TYPE lcl_mustache=>ty_struc_tt.
+
+  PRIVATE SECTION.
+    DATA mt_data TYPE lcl_mustache=>ty_struc_tt.
+
+ENDCLASS.
+
+CLASS lcl_mustache_data IMPLEMENTATION.
+  METHOD get_for.
+    DATA lo_temp TYPE REF TO lcl_mustache_data.
+    CREATE OBJECT lo_temp.
+    lo_temp->add( iv_name = iv_name iv_val = iv_val ).
+    rt_data = lo_temp->get( ).
+  ENDMETHOD.
+
+  METHOD add.
+
+    DATA lo_type TYPE REF TO cl_abap_typedescr.
+    DATA ls_data LIKE LINE OF mt_data.
+
+    ls_data-name = iv_name.
+
+    lo_type = cl_abap_typedescr=>describe_by_data( iv_val ).
+
+    CASE lo_type->kind.
+      WHEN cl_abap_typedescr=>kind_class OR cl_abap_typedescr=>kind_intf.
+        ls_data-oref = iv_val.
+      WHEN cl_abap_typedescr=>kind_elem.
+        ls_data-val = |{ iv_val }|.
+      WHEN cl_abap_typedescr=>kind_ref.
+        ls_data-dref = iv_val.
+      WHEN cl_abap_typedescr=>kind_struct.
+        GET REFERENCE OF iv_val INTO ls_data-dref.
+      WHEN cl_abap_typedescr=>kind_table.
+        GET REFERENCE OF iv_val INTO ls_data-dref.
+    ENDCASE.
+
+    APPEND ls_data TO mt_data.
+
+  ENDMETHOD.
+
+  METHOD get.
+    rt_data = mt_data.
+  ENDMETHOD.
+
+ENDCLASS.
 
 *----------------------------------------------------------------------*
 *       CLASS lcl_mustache_parser

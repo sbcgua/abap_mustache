@@ -834,3 +834,44 @@ CLASS ltcl_mustache_render IMPLEMENTATION.
   ENDMETHOD. "render_section
 
 ENDCLASS.
+
+CLASS ltcl_mustache_data DEFINITION FINAL
+  FOR TESTING RISK LEVEL HARMLESS DURATION SHORT.
+
+  PRIVATE SECTION.
+
+    METHODS test FOR TESTING.
+
+ENDCLASS.
+
+CLASS ltcl_mustache_data IMPLEMENTATION.
+
+  METHOD test.
+
+    DATA lo_data TYPE REF TO lcl_mustache_data.
+    DATA lt_strtab TYPE string_table.
+    DATA lt_exp TYPE lcl_mustache=>ty_struc_tt.
+
+    FIELD-SYMBOLS <e> LIKE LINE OF lt_exp.
+
+    APPEND 'Hello' TO lt_strtab.
+    APPEND 'World' TO lt_strtab.
+
+    CREATE OBJECT lo_data.
+
+    lo_data->add( iv_name = 'A' iv_val = 'B' ).
+    lo_data->add( iv_name = 'T' iv_val = lt_strtab ).
+
+    APPEND INITIAL LINE TO lt_exp ASSIGNING <e>.
+    <e>-name = 'A'.
+    <e>-val  = 'B'.
+
+    APPEND INITIAL LINE TO lt_exp ASSIGNING <e>.
+    <e>-name = 'T'.
+    GET REFERENCE OF lt_strtab INTO <e>-dref.
+
+    cl_abap_unit_assert=>assert_equals( exp = lt_exp act = lo_data->get( ) ).
+
+  ENDMETHOD.
+
+ENDCLASS.
