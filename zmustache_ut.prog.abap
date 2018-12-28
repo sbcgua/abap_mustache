@@ -20,6 +20,58 @@ DEFINE _add_mu_val_rc.
   <rcline>-rc     = &3.
 END-OF-DEFINITION.
 
+CLASS ltcl_dummy_component DEFINITION FINAL.
+  PUBLIC SECTION.
+    METHODS render
+      IMPORTING iv_value TYPE string OPTIONAL
+      RETURNING VALUE(rv_val) TYPE string.
+ENDCLASS.
+CLASS ltcl_dummy_component IMPLEMENTATION.
+  METHOD render.
+    rv_val = 'hello world'.
+  ENDMETHOD.
+ENDCLASS.
+
+CLASS ltcl_dummy_component_norend DEFINITION FINAL.
+  PUBLIC SECTION.
+    METHODS other.
+ENDCLASS.
+CLASS ltcl_dummy_component_norend IMPLEMENTATION.
+  METHOD other.
+  ENDMETHOD.
+ENDCLASS.
+
+CLASS ltcl_dummy_component_noret DEFINITION FINAL.
+  PUBLIC SECTION.
+    METHODS render.
+ENDCLASS.
+CLASS ltcl_dummy_component_noret IMPLEMENTATION.
+  METHOD render. ENDMETHOD.
+ENDCLASS.
+
+CLASS ltcl_dummy_component_manimp DEFINITION FINAL.
+  PUBLIC SECTION.
+    METHODS render IMPORTING iv_value TYPE string.
+ENDCLASS.
+CLASS ltcl_dummy_component_manimp IMPLEMENTATION.
+  METHOD render. ENDMETHOD.
+ENDCLASS.
+
+INTERFACE ltif_dummy_component.
+  METHODS render RETURNING VALUE(rv_val) TYPE string.
+ENDINTERFACE.
+
+CLASS ltcl_dummy_component_intf DEFINITION FINAL.
+  PUBLIC SECTION.
+    INTERFACES ltif_dummy_component.
+ENDCLASS.
+CLASS ltcl_dummy_component_intf IMPLEMENTATION.
+  METHOD ltif_dummy_component~render.
+    rv_val = 'hello world'.
+  ENDMETHOD.
+ENDCLASS.
+
+
 *----------------------------------------------------------------------*
 *       CLASS ltcl_mustache_utils
 *----------------------------------------------------------------------*
@@ -147,6 +199,8 @@ CLASS ltcl_mustache DEFINITION FINAL
     METHODS render_w_partials       FOR TESTING.
     METHODS render_tt               FOR TESTING.
     METHODS add_partial             FOR TESTING.
+    METHODS render_with_data_builder FOR TESTING.
+    METHODS render_with_object      FOR TESTING.
 
 ENDCLASS. "ltcl_mustache
 
@@ -443,7 +497,6 @@ CLASS ltcl_mustache IMPLEMENTATION.
 
     _add_mu_val_rc lt_tab '{{>partial}}'      'PNF'.
     _add_mu_val_rc lt_tab '{{#obj}}!{{/obj}}' 'CRWD'.
-    _add_mu_val_rc lt_tab '{{obj}}'           'CCTS'.
     _add_mu_val_rc lt_tab '{{field}}'         'FNF'.
 
     LOOP AT lt_tab ASSIGNING <rcline>.
@@ -521,6 +574,81 @@ CLASS ltcl_mustache IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( exp = 'MPD' act = lx->rc ).
 
   ENDMETHOD. "add_partial
+
+  METHOD render_with_data_builder.
+
+    DATA lo_data TYPE REF TO lcl_mustache_data.
+    DATA lv_act  TYPE string.
+    DATA lt_strings TYPE string_table.
+    DATA lo_mustache TYPE REF TO lcl_mustache.
+    DATA lx          TYPE REF TO lcx_mustache_error.
+
+    CREATE OBJECT lo_data.
+    APPEND 'hello' TO lt_strings.
+    APPEND 'world' TO lt_strings.
+    lo_data->add( iv_name = 'items' iv_val = lt_strings ).
+
+    TRY .
+      lo_mustache = lcl_mustache=>create(
+        '{{#items}}'     && c_nl &&
+        '-{{@tabline}}' && c_nl &&
+        '{{/items}}' ).
+
+      lv_act = lo_mustache->render( lo_data->get( ) ).
+
+      cl_abap_unit_assert=>assert_equals(
+        exp = '-hello' && c_nl && '-world' && c_nl
+        act = lv_act ).
+    CATCH lcx_mustache_error INTO lx.
+      cl_abap_unit_assert=>fail( lx->msg ).
+    ENDTRY.
+
+  ENDMETHOD.
+
+  METHOD render_with_object.
+
+    DATA lo_data TYPE REF TO lcl_mustache_data.
+    DATA lo_component TYPE REF TO ltcl_dummy_component.
+    DATA lv_act  TYPE string.
+    DATA lo_mustache TYPE REF TO lcl_mustache.
+    DATA lx          TYPE REF TO lcx_mustache_error.
+
+    TRY .
+      lo_mustache = lcl_mustache=>create( '{{tag}}' ).
+    CATCH lcx_mustache_error INTO lx.
+      cl_abap_unit_assert=>fail( lx->msg ).
+    ENDTRY.
+
+    " Object
+    CREATE OBJECT lo_component.
+    CREATE OBJECT lo_data.
+    lo_data->add( iv_name = 'tag' iv_val = lo_component ).
+    TRY .
+      lv_act = lo_mustache->render( lo_data->get( ) ).
+      cl_abap_unit_assert=>assert_equals(
+        exp = 'hello world'
+        act = lv_act ).
+    CATCH lcx_mustache_error INTO lx.
+      cl_abap_unit_assert=>fail( lx->msg ).
+    ENDTRY.
+
+    " Interface
+    DATA lo_comp_if TYPE REF TO ltcl_dummy_component_intf.
+    DATA li_comp TYPE REF TO ltif_dummy_component.
+    CREATE OBJECT lo_comp_if.
+    CREATE OBJECT lo_data.
+    li_comp = lo_comp_if.
+    lo_data->add( iv_name = 'tag' iv_val = li_comp ).
+    TRY .
+      lv_act = lo_mustache->render( lo_data->get( ) ).
+      cl_abap_unit_assert=>assert_equals(
+        exp = 'hello world'
+        act = lv_act ).
+    CATCH lcx_mustache_error INTO lx.
+      cl_abap_unit_assert=>fail( lx->msg ).
+    ENDTRY.
+
+  ENDMETHOD.
 
 ENDCLASS. "ltcl_mustache
 
@@ -709,8 +837,9 @@ CLASS ltcl_mustache_render DEFINITION FINAL
 
   PRIVATE SECTION.
 
-    METHODS find_value              FOR TESTING.
-    METHODS render_section          FOR TESTING.
+    METHODS find_value     FOR TESTING.
+    METHODS render_section FOR TESTING.
+    METHODS render_oref_negative FOR TESTING.
 
 ENDCLASS.
 
@@ -832,6 +961,65 @@ CLASS ltcl_mustache_render IMPLEMENTATION.
     ENDDO.
 
   ENDMETHOD. "render_section
+
+  METHOD render_oref_negative.
+
+    DATA lo_data TYPE REF TO lcl_mustache_data.
+    DATA lo_mustache TYPE REF TO lcl_mustache.
+    DATA lx          TYPE REF TO lcx_mustache_error.
+
+    TRY .
+      lo_mustache = lcl_mustache=>create( '{{tag}}' ).
+    CATCH lcx_mustache_error INTO lx.
+      cl_abap_unit_assert=>fail( lx->msg ).
+    ENDTRY.
+
+    " no render
+    DATA lo_comp1 TYPE REF TO ltcl_dummy_component_norend.
+    CLEAR lx.
+    CREATE OBJECT lo_comp1.
+    CREATE OBJECT lo_data.
+    lo_data->add( iv_name = 'tag' iv_val = lo_comp1 ).
+    TRY .
+      lo_mustache->render( lo_data->get( ) ).
+    CATCH lcx_mustache_error INTO lx.
+      cl_abap_unit_assert=>assert_equals(
+        exp = 'ODHR'
+        act = lx->rc ).
+    ENDTRY.
+    cl_abap_unit_assert=>assert_not_initial( lx ).
+
+    " no return
+    DATA lo_comp2 TYPE REF TO ltcl_dummy_component_noret.
+    CLEAR lx.
+    CREATE OBJECT lo_comp2.
+    CREATE OBJECT lo_data.
+    lo_data->add( iv_name = 'tag' iv_val = lo_comp2 ).
+    TRY .
+      lo_mustache->render( lo_data->get( ) ).
+    CATCH lcx_mustache_error INTO lx.
+      cl_abap_unit_assert=>assert_equals(
+        exp = 'ORRS'
+        act = lx->rc ).
+    ENDTRY.
+    cl_abap_unit_assert=>assert_not_initial( lx ).
+
+    " mandatory param
+    DATA lo_comp3 TYPE REF TO ltcl_dummy_component_manimp.
+    CLEAR lx.
+    CREATE OBJECT lo_comp3.
+    CREATE OBJECT lo_data.
+    lo_data->add( iv_name = 'tag' iv_val = lo_comp3 ).
+    TRY .
+      lo_mustache->render( lo_data->get( ) ).
+    CATCH lcx_mustache_error INTO lx.
+      cl_abap_unit_assert=>assert_equals(
+        exp = 'ORMP'
+        act = lx->rc ).
+    ENDTRY.
+    cl_abap_unit_assert=>assert_not_initial( lx ).
+
+  ENDMETHOD.
 
 ENDCLASS.
 

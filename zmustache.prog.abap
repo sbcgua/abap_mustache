@@ -302,11 +302,16 @@ CLASS lcl_mustache_data IMPLEMENTATION.
 
     CASE lo_type->kind.
       WHEN cl_abap_typedescr=>kind_class OR cl_abap_typedescr=>kind_intf.
-        ls_data-oref = iv_val.
+        " ls_data-oref = iv_val. ???
       WHEN cl_abap_typedescr=>kind_elem.
         ls_data-val = |{ iv_val }|.
       WHEN cl_abap_typedescr=>kind_ref.
-        ls_data-dref = iv_val.
+        CASE lo_type->type_kind.
+          WHEN cl_abap_typedescr=>typekind_dref.
+            ls_data-dref = iv_val.
+          WHEN cl_abap_typedescr=>typekind_oref.
+            ls_data-oref = iv_val.
+        ENDCASE.
       WHEN cl_abap_typedescr=>kind_struct.
         GET REFERENCE OF iv_val INTO ls_data-dref.
       WHEN cl_abap_typedescr=>kind_table.
@@ -660,6 +665,7 @@ CLASS lcl_mustache_render DEFINITION FINAL.
         elem  TYPE char10 VALUE 'IFPCDNTg',
         struc TYPE char2  VALUE 'uv',
         table TYPE char1  VALUE 'h',
+        oref  TYPE char1  VALUE 'r',
       END OF c_data_type.
 
     CLASS-METHODS render_section
@@ -710,6 +716,15 @@ CLASS lcl_mustache_render DEFINITION FINAL.
         iv_cond          TYPE lcl_mustache=>ty_token-cond
       RETURNING
         VALUE(rv_result) TYPE abap_bool
+      RAISING
+        lcx_mustache_error.
+
+    CLASS-METHODS render_oref
+      IMPORTING
+        io_obj      TYPE REF TO object
+        iv_tag_name TYPE string OPTIONAL
+      RETURNING
+        VALUE(rv_val) TYPE string
       RAISING
         lcx_mustache_error.
 
@@ -898,13 +913,16 @@ CLASS lcl_mustache_render IMPLEMENTATION.
     ASSIGN lr->* TO <field>.
     DESCRIBE FIELD <field> TYPE lv_type.
 
-    IF lv_type NA c_data_type-elem. " Element data type
+    IF lv_type CA c_data_type-elem. " Element data type
+      rv_val = <field>.
+    ELSEIF lv_type CA c_data_type-oref. " Object or interface instance
+      rv_val = render_oref( iv_tag_name = iv_name io_obj = <field> ).
+    ELSE.
       lcx_mustache_error=>raise(
         msg = |Cannot convert { iv_name } to string|
         rc  = 'CCTS' ).
     ENDIF.
 
-    rv_val = <field>.
 
   ENDMETHOD.  " find_value.
 
@@ -963,6 +981,8 @@ CLASS lcl_mustache_render IMPLEMENTATION.
           lv_found = abap_true.
           IF <rec>-dref IS NOT INITIAL.
             rv_ref = <rec>-dref.
+          ELSEIF <rec>-oref IS NOT INITIAL.
+            GET REFERENCE OF <rec>-oref INTO rv_ref.
           ELSE.
             GET REFERENCE OF <rec>-val INTO rv_ref.
           ENDIF.
@@ -1011,6 +1031,60 @@ CLASS lcl_mustache_render IMPLEMENTATION.
     ENDCASE.
 
   ENDMETHOD. "eval_condition
+
+  METHOD render_oref.
+
+    DATA lo_type TYPE REF TO cl_abap_objectdescr.
+    DATA ls_meth LIKE LINE OF lo_type->methods.
+    DATA ls_param LIKE LINE OF ls_meth-parameters.
+    DATA lv_meth_found TYPE abap_bool.
+    DATA lv_if TYPE abap_methname.
+    DATA lv_if_meth TYPE abap_methname.
+
+    lo_type ?= cl_abap_objectdescr=>describe_by_object_ref( io_obj ).
+
+    LOOP AT lo_type->methods INTO ls_meth.
+      SPLIT ls_meth-name AT '~' INTO lv_if lv_if_meth.
+      IF lv_if = 'RENDER' AND lv_if_meth IS INITIAL OR lv_if_meth = 'RENDER'.
+        lv_meth_found = abap_true.
+        EXIT.
+      ENDIF.
+    ENDLOOP.
+
+    IF lv_meth_found = abap_false.
+      lcx_mustache_error=>raise(
+        msg = |Object does not have render method for tag '{ iv_tag_name }'|
+        rc  = 'ODHR' ).
+    ENDIF.
+
+    READ TABLE ls_meth-parameters TRANSPORTING NO FIELDS
+      WITH KEY parm_kind = 'I' is_optional = ''.
+    IF sy-subrc IS INITIAL.
+      lcx_mustache_error=>raise(
+        msg = |Object render() has mandatory params for tag '{ iv_tag_name }'|
+        rc  = 'ORMP' ).
+    ENDIF.
+
+    READ TABLE ls_meth-parameters INTO ls_param
+      WITH KEY parm_kind = cl_abap_objectdescr=>returning type_kind = cl_abap_typedescr=>typekind_string.
+    IF sy-subrc IS NOT INITIAL.
+      lcx_mustache_error=>raise(
+        msg = |Object render() does not return string for tag '{ iv_tag_name }'|
+        rc  = 'ORRS' ).
+    ENDIF.
+
+    DATA lt_ptab TYPE abap_parmbind_tab.
+    DATA ls_ptab LIKE LINE OF lt_ptab.
+
+    ls_ptab-name = ls_param-name.
+    ls_ptab-kind = cl_abap_objectdescr=>receiving.
+    GET REFERENCE OF rv_val INTO ls_ptab-value.
+    INSERT ls_ptab INTO TABLE lt_ptab.
+
+    CALL METHOD io_obj->(ls_meth-name)
+      PARAMETER-TABLE lt_ptab.
+
+  ENDMETHOD.
 
 ENDCLASS.
 
