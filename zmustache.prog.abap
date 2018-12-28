@@ -118,9 +118,9 @@ ENDCLASS. "lcl_mustache_utils
 *----------------------------------------------------------------------*
 *       CLASS lcl_mustache DEFINITION
 *----------------------------------------------------------------------*
-CLASS lcl_mustache_lib DEFINITION DEFERRED.
+CLASS lcl_mustache_render DEFINITION DEFERRED.
 CLASS lcl_mustache DEFINITION FINAL
-  FRIENDS lcl_mustache_lib.
+  FRIENDS lcl_mustache_render.
 
   PUBLIC SECTION.
 
@@ -139,7 +139,7 @@ CLASS lcl_mustache DEFINITION FINAL
         level   TYPE i,
         content TYPE string,
       END OF ty_token,
-      ty_token_tt TYPE STANDARD TABLE OF ty_token WITH DEFAULT KEY.
+      ty_token_tt TYPE STANDARD TABLE OF ty_token WITH KEY type cond level.
 
     TYPES:  " Universal input data structure
       BEGIN OF ty_struc,
@@ -147,14 +147,14 @@ CLASS lcl_mustache DEFINITION FINAL
         val  TYPE string,
         dref TYPE REF TO data,
       END OF ty_struc,
-      ty_struc_tt TYPE STANDARD TABLE OF ty_struc WITH DEFAULT KEY.
+      ty_struc_tt TYPE STANDARD TABLE OF ty_struc WITH KEY name.
 
     TYPES:  " Partials
       BEGIN OF ty_partial,
         name TYPE string,
         obj  TYPE REF TO lcl_mustache,
       END OF ty_partial,
-      ty_partial_tt TYPE STANDARD TABLE OF ty_partial WITH DEFAULT KEY.
+      ty_partial_tt TYPE STANDARD TABLE OF ty_partial WITH KEY name.
 
     TYPES:
       BEGIN OF ty_context,
@@ -242,22 +242,10 @@ CLASS lcl_mustache DEFINITION FINAL
 ENDCLASS. "lcl_mustache
 
 *----------------------------------------------------------------------*
-*       CLASS lcl_mustache_lib
+*       CLASS lcl_mustache_parser
 *----------------------------------------------------------------------*
-
-CLASS lcl_mustache_lib DEFINITION FINAL.
+CLASS lcl_mustache_parser DEFINITION FINAL.
   PUBLIC SECTION.
-
-    CONSTANTS:
-      " Max depth of partials recursion, feel free to change for your needs
-      C_MAX_PARTIALS_DEPTH TYPE i VALUE 10.
-
-    CONSTANTS:
-      BEGIN OF c_data_type,
-        elem  TYPE char10 VALUE 'IFPCDNTg',
-        struc TYPE char2  VALUE 'uv',
-        table TYPE char1  VALUE 'h',
-      END OF c_data_type.
 
     CLASS-METHODS parse_template
       IMPORTING
@@ -292,71 +280,9 @@ CLASS lcl_mustache_lib DEFINITION FINAL.
       RAISING
         lcx_mustache_error.
 
-    CLASS-METHODS render_section
-      IMPORTING
-        is_statics    TYPE lcl_mustache=>ty_context
-        i_data        TYPE any
-        it_data_stack TYPE lcl_mustache=>ty_ref_tt     OPTIONAL
-        iv_start_idx  TYPE i             DEFAULT 1
-        iv_path       TYPE string        DEFAULT '/'
-      CHANGING
-        ct_lines      TYPE string_table
-      RAISING
-        lcx_mustache_error.
-
-    CLASS-METHODS render_loop
-      IMPORTING
-        is_statics    TYPE lcl_mustache=>ty_context
-        it_data_stack TYPE lcl_mustache=>ty_ref_tt
-        iv_start_idx  TYPE i
-        iv_path       TYPE string
-      CHANGING
-        ct_lines      TYPE string_table
-      RAISING
-        lcx_mustache_error.
-
-    CLASS-METHODS find_value
-      IMPORTING
-        iv_name       TYPE string
-        it_data_stack TYPE lcl_mustache=>ty_ref_tt
-      RETURNING
-        VALUE(rv_val) TYPE string
-      RAISING
-        lcx_mustache_error.
-
-    CLASS-METHODS find_walker
-      IMPORTING
-        iv_name       TYPE string
-        it_data_stack TYPE lcl_mustache=>ty_ref_tt
-        iv_level      TYPE i
-      RETURNING
-        VALUE(rv_ref) TYPE REF TO data
-      RAISING
-        lcx_mustache_error.
-
-    CLASS-METHODS eval_condition
-      IMPORTING
-        iv_var           TYPE any
-        iv_cond          TYPE lcl_mustache=>ty_token-cond
-      RETURNING
-        VALUE(rv_result) TYPE abap_bool
-      RAISING
-        lcx_mustache_error.
-
-    CLASS-METHODS class_constructor.
-
-  PRIVATE SECTION.
-
-    CLASS-DATA: c_ty_struc_tt_absolute_name TYPE abap_abstypename.
-
 ENDCLASS.
 
-CLASS lcl_mustache_lib IMPLEMENTATION.
-
-  METHOD class_constructor.
-    DATA lt_dummy TYPE lcl_mustache=>ty_struc_tt.
-    c_ty_struc_tt_absolute_name = cl_abap_typedescr=>describe_by_data( lt_dummy )->absolute_name.
-  ENDMETHOD. "class_constructor
+CLASS lcl_mustache_parser IMPLEMENTATION.
 
   METHOD parse_template.
 
@@ -642,6 +568,93 @@ CLASS lcl_mustache_lib IMPLEMENTATION.
     ENDIF.
 
   ENDMETHOD.  " build_token_structure.
+
+ENDCLASS.
+
+
+*----------------------------------------------------------------------*
+*       CLASS lcl_mustache_render
+*----------------------------------------------------------------------*
+
+CLASS lcl_mustache_render DEFINITION FINAL.
+  PUBLIC SECTION.
+
+    CONSTANTS:
+      " Max depth of partials recursion, feel free to change for your needs
+      C_MAX_PARTIALS_DEPTH TYPE i VALUE 10.
+
+    CONSTANTS:
+      BEGIN OF c_data_type,
+        elem  TYPE char10 VALUE 'IFPCDNTg',
+        struc TYPE char2  VALUE 'uv',
+        table TYPE char1  VALUE 'h',
+      END OF c_data_type.
+
+    CLASS-METHODS render_section
+      IMPORTING
+        is_statics    TYPE lcl_mustache=>ty_context
+        i_data        TYPE any
+        it_data_stack TYPE lcl_mustache=>ty_ref_tt     OPTIONAL
+        iv_start_idx  TYPE i             DEFAULT 1
+        iv_path       TYPE string        DEFAULT '/'
+      CHANGING
+        ct_lines      TYPE string_table
+      RAISING
+        lcx_mustache_error.
+
+    CLASS-METHODS render_loop
+      IMPORTING
+        is_statics    TYPE lcl_mustache=>ty_context
+        it_data_stack TYPE lcl_mustache=>ty_ref_tt
+        iv_start_idx  TYPE i
+        iv_path       TYPE string
+      CHANGING
+        ct_lines      TYPE string_table
+      RAISING
+        lcx_mustache_error.
+
+    CLASS-METHODS find_value
+      IMPORTING
+        iv_name       TYPE string
+        it_data_stack TYPE lcl_mustache=>ty_ref_tt
+      RETURNING
+        VALUE(rv_val) TYPE string
+      RAISING
+        lcx_mustache_error.
+
+    CLASS-METHODS find_walker
+      IMPORTING
+        iv_name       TYPE string
+        it_data_stack TYPE lcl_mustache=>ty_ref_tt
+        iv_level      TYPE i
+      RETURNING
+        VALUE(rv_ref) TYPE REF TO data
+      RAISING
+        lcx_mustache_error.
+
+    CLASS-METHODS eval_condition
+      IMPORTING
+        iv_var           TYPE any
+        iv_cond          TYPE lcl_mustache=>ty_token-cond
+      RETURNING
+        VALUE(rv_result) TYPE abap_bool
+      RAISING
+        lcx_mustache_error.
+
+    CLASS-METHODS class_constructor.
+
+  PRIVATE SECTION.
+
+    CLASS-DATA: c_ty_struc_tt_absolute_name TYPE abap_abstypename.
+
+ENDCLASS.
+
+CLASS lcl_mustache_render IMPLEMENTATION.
+
+  METHOD class_constructor.
+    DATA lt_dummy TYPE lcl_mustache=>ty_struc_tt.
+    c_ty_struc_tt_absolute_name = cl_abap_typedescr=>describe_by_data( lt_dummy )->absolute_name.
+  ENDMETHOD. "class_constructor
 
   METHOD render_section.
 
@@ -952,7 +965,7 @@ CLASS lcl_mustache IMPLEMENTATION.
 
   METHOD constructor.
     mv_x_format = iv_x_format.
-    mt_tokens   = lcl_mustache_lib=>parse_template(
+    mt_tokens   = lcl_mustache_parser=>parse_template(
       iv_template = iv_template
       it_template = it_template ).
   ENDMETHOD.  " constructor.
@@ -974,7 +987,7 @@ CLASS lcl_mustache IMPLEMENTATION.
     ls_statics-partials = mt_partials.
     ls_statics-x_format = mv_x_format.
 
-    lcl_mustache_lib=>render_section(
+    lcl_mustache_render=>render_section(
       EXPORTING
         is_statics  = ls_statics
         i_data      = i_data

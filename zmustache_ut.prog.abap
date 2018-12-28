@@ -143,13 +143,6 @@ CLASS ltcl_mustache DEFINITION FINAL
 
     CLASS-METHODS class_setup.
 
-    METHODS parse_template          FOR TESTING.
-    METHODS parse_template_table    FOR TESTING.
-    METHODS parse_template_negative FOR TESTING.
-    METHODS parse_tag               FOR TESTING.
-    METHODS parse_tag_negative      FOR TESTING.
-    METHODS find_value              FOR TESTING.
-    METHODS render_section          FOR TESTING.
     METHODS render_negative         FOR TESTING.
     METHODS render_w_partials       FOR TESTING.
     METHODS render_tt               FOR TESTING.
@@ -365,280 +358,6 @@ CLASS ltcl_mustache IMPLEMENTATION.
 
   ENDMETHOD. "get_test_data
 
-  METHOD parse_template.
-
-    DATA:
-          lt_exp      TYPE lcl_mustache=>ty_token_tt,
-          lt_act      TYPE lcl_mustache=>ty_token_tt,
-          lv_count    TYPE i,
-          lv_idx      TYPE i,
-          lv_template TYPE string,
-          lx          TYPE REF TO lcx_mustache_error.
-
-    get_test_case( IMPORTING ev_count = lv_count ).
-
-    DO lv_count TIMES.
-      lv_idx = sy-index.
-      get_test_case( EXPORTING iv_index    = lv_idx
-                     IMPORTING ev_template = lv_template
-                               et_tokens   = lt_exp ).
-
-      TRY .
-        lt_act = lcl_mustache_lib=>parse_template( lv_template ).
-        cl_abap_unit_assert=>assert_equals(
-          exp = lt_exp
-          act = lt_act
-          msg = |parse_template, case { lv_idx }| ).
-      CATCH lcx_mustache_error INTO lx.
-        cl_abap_unit_assert=>fail( lx->msg ).
-      ENDTRY.
-
-    ENDDO.
-
-  ENDMETHOD.  " parse_template.
-
-  METHOD parse_template_negative.
-
-    DATA:
-          lt_tab TYPE ty_tag_rc_tt,
-          lx     TYPE REF TO lcx_mustache_error.
-
-    FIELD-SYMBOLS <rcline> LIKE LINE OF lt_tab.
-
-    _add_mu_val_rc lt_tab 'Hello {{name}!'               'CTNF'.
-    _add_mu_val_rc lt_tab 'Good {{#pm}}afternoon'        'SNC'.
-    _add_mu_val_rc lt_tab 'Good afternoon{{/pm}}'        'CNOS'.
-    _add_mu_val_rc lt_tab 'Good {{#pm}}afternoon{{/am}}' 'CSM'.
-
-    LOOP AT lt_tab ASSIGNING <rcline>.
-      CLEAR lx.
-      TRY .
-        lcl_mustache_lib=>parse_template( <rcline>-val ).
-      CATCH lcx_mustache_error INTO lx.
-        ASSERT 1 = 1.
-      ENDTRY.
-      cl_abap_unit_assert=>assert_not_initial( act = lx ).
-      cl_abap_unit_assert=>assert_equals( exp = <rcline>-rc act = lx->rc ).
-    ENDLOOP.
-
-  ENDMETHOD. "parse_template_negative
-
-  METHOD parse_template_table.
-
-    DATA:
-          lt_exp      TYPE lcl_mustache=>ty_token_tt,
-          lt_act      TYPE lcl_mustache=>ty_token_tt,
-          lt_template TYPE string_table,
-          lx          TYPE REF TO lcx_mustache_error.
-
-    FIELD-SYMBOLS <token> LIKE LINE OF lt_exp.
-
-    APPEND 'Our sales:'              TO lt_template.
-    APPEND '{{#items}}'              TO lt_template.
-    APPEND '* {{name}} - ${{price}}' TO lt_template.
-    APPEND '{{/items}}'              TO lt_template.
-
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-static      ''  1   `Our sales:`.
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-static      ''  1   c_nl.
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-section     '=' 1   'items'.
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-static      ''  2   `* `.
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-etag        ''  2   'name'.
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-static      ''  2   ` - $`.
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-etag        ''  2   'price'.
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-static      ''  2   c_nl.
-
-    TRY.
-      lt_act = lcl_mustache_lib=>parse_template( it_template = lt_template ).
-    CATCH lcx_mustache_error INTO lx.
-      cl_abap_unit_assert=>fail( lx->msg ).
-    ENDTRY.
-    cl_abap_unit_assert=>assert_equals( exp = lt_exp act = lt_act ).
-
-  ENDMETHOD.  " parse_template_table
-
-  METHOD parse_tag.
-
-    DATA:
-          lt_exp TYPE lcl_mustache=>ty_token_tt,
-          lt_act TYPE lcl_mustache=>ty_token_tt,
-          lx TYPE REF TO lcx_mustache_error.
-
-    FIELD-SYMBOLS <token> LIKE LINE OF lt_exp.
-
-    TRY .
-      APPEND lcl_mustache_lib=>parse_tag( 'name' ) TO lt_act.
-      APPEND lcl_mustache_lib=>parse_tag( '{ name }' ) TO lt_act.
-      APPEND lcl_mustache_lib=>parse_tag( '&name' ) TO lt_act.
-      APPEND lcl_mustache_lib=>parse_tag( '#name' ) TO lt_act.
-      APPEND lcl_mustache_lib=>parse_tag( '# name ' ) TO lt_act.
-      APPEND lcl_mustache_lib=>parse_tag( '^name' ) TO lt_act.
-      APPEND lcl_mustache_lib=>parse_tag( '/name' ) TO lt_act.
-      APPEND lcl_mustache_lib=>parse_tag( '!name' ) TO lt_act.
-      APPEND lcl_mustache_lib=>parse_tag( '= {*  *} =' ) TO lt_act.
-    CATCH lcx_mustache_error INTO lx.
-      cl_abap_unit_assert=>fail( lx->msg ).
-    ENDTRY.
-
-    "                    TYPE                                  COND LEV CONTENT
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-etag        ''  0   'name'.
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-utag        ''  0   'name'.
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-utag        ''  0   'name'.
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-section     '=' 0   'name'.
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-section     '=' 0   'name'.
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-section     '!' 0   'name'.
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-section_end ''  0   'name'.
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-comment     ''  0   'name'.
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-delimiter   ''  0   '{* *}'. " Boobs :)
-
-    cl_abap_unit_assert=>assert_equals( exp = lt_exp act = lt_act ).
-
-  ENDMETHOD. "parse_tag
-
-  METHOD parse_tag_negative.
-
-    DATA:
-          lt_tab TYPE ty_tag_rc_tt,
-          lx     TYPE REF TO lcx_mustache_error.
-
-    FIELD-SYMBOLS <rcline> LIKE LINE OF lt_tab.
-
-    _add_mu_val_rc lt_tab ''        'ET'.
-    _add_mu_val_rc lt_tab '{}'      'ET'.
-    _add_mu_val_rc lt_tab '   '     'ET'.
-    _add_mu_val_rc lt_tab '{   }'   'ET'.
-    _add_mu_val_rc lt_tab '{name'   'MC}'.
-    _add_mu_val_rc lt_tab '=name'   'MC='.
-    _add_mu_val_rc lt_tab '#'       'ET'.
-    _add_mu_val_rc lt_tab '=xxx='   'CDF'.
-    _add_mu_val_rc lt_tab '=x x x=' 'CDF'.
-
-    LOOP AT lt_tab ASSIGNING <rcline>.
-      CLEAR lx.
-      TRY .
-        lcl_mustache_lib=>parse_tag( <rcline>-val ).
-      CATCH lcx_mustache_error INTO lx.
-        ASSERT 1 = 1.
-      ENDTRY.
-      cl_abap_unit_assert=>assert_not_initial( act = lx ).
-      cl_abap_unit_assert=>assert_equals( exp = <rcline>-rc act = lx->rc ).
-    ENDLOOP.
-
-  ENDMETHOD. "parse_tag_negative
-
-  METHOD find_value.
-
-    DATA:
-          lr            TYPE REF TO data,
-          lt_data_stack TYPE lcl_mustache=>ty_ref_tt,
-          ls_dummy      TYPE lcl_mustache=>ty_struc,
-          lt_dummy      TYPE lcl_mustache=>ty_struc_tt,
-          lv_act        TYPE string,
-          lx            TYPE REF TO lcx_mustache_error.
-
-    ls_dummy-name = 'abc'.
-    ls_dummy-val  = '123'.
-    APPEND ls_dummy TO lt_dummy.
-
-    "1----------------
-    CLEAR lt_data_stack.
-    GET REFERENCE OF ls_dummy INTO lr.
-    APPEND lr TO lt_data_stack.
-
-    TRY .
-      lv_act = lcl_mustache_lib=>find_value( it_data_stack = lt_data_stack iv_name = 'NAME' ).
-      cl_abap_unit_assert=>assert_equals( exp = 'abc' act = lv_act ).
-    CATCH lcx_mustache_error INTO lx.
-      cl_abap_unit_assert=>fail( lx->msg ).
-    ENDTRY.
-
-    "2----------------
-    CLEAR lt_data_stack.
-    GET REFERENCE OF lt_dummy INTO lr.
-    APPEND lr TO lt_data_stack.
-
-    TRY .
-      lv_act = lcl_mustache_lib=>find_value( it_data_stack = lt_data_stack iv_name = 'Abc' ).
-      cl_abap_unit_assert=>assert_equals( exp = '123' act = lv_act ).
-    CATCH lcx_mustache_error INTO lx.
-      cl_abap_unit_assert=>fail( lx->msg ).
-    ENDTRY.
-
-    "3----------------
-    CLEAR lt_data_stack.
-    GET REFERENCE OF ls_dummy INTO lr.
-    APPEND lr TO lt_data_stack.
-    GET REFERENCE OF lt_dummy INTO lr.
-    APPEND lr TO lt_data_stack.
-
-    TRY .
-      lv_act = lcl_mustache_lib=>find_value( it_data_stack = lt_data_stack iv_name = 'Abc' ).
-      cl_abap_unit_assert=>assert_equals( exp = '123' act = lv_act ).
-      lv_act = lcl_mustache_lib=>find_value( it_data_stack = lt_data_stack iv_name = 'name' ).
-      cl_abap_unit_assert=>assert_equals( exp = 'abc' act = lv_act ).
-    CATCH lcx_mustache_error INTO lx.
-      cl_abap_unit_assert=>fail( lx->msg ).
-    ENDTRY.
-
-  ENDMETHOD.  " find_value.
-
-  METHOD render_section.
-
-    DATA:
-          ls_statics      TYPE lcl_mustache=>ty_context,
-          ls_simple       TYPE ty_dummy,
-          lt_complex      TYPE lcl_mustache=>ty_struc_tt,
-          lv_count        TYPE i,
-          lv_idx          TYPE i,
-          iv_complex_test TYPE abap_bool,
-          lv_exp          TYPE string,
-          lv_act          TYPE string,
-          lt_act          TYPE string_table,
-          lx              TYPE REF TO lcx_mustache_error.
-
-    get_test_case( IMPORTING ev_count = lv_count ).
-    get_test_data( IMPORTING es_simple   = ls_simple
-                             et_complex  = lt_complex ).
-    ls_statics-x_format = cl_abap_format=>e_html_text.
-
-    DO lv_count TIMES.
-      lv_idx = sy-index.
-      get_test_case( EXPORTING iv_index        = lv_idx
-                     IMPORTING ev_output       = lv_exp
-                               et_tokens       = ls_statics-tokens
-                               ev_complex_test = iv_complex_test ).
-
-      CLEAR lt_act.
-      TRY .
-        IF iv_complex_test = abap_true.
-          lcl_mustache_lib=>render_section(
-            EXPORTING
-              is_statics = ls_statics
-              i_data     = lt_complex
-            CHANGING
-              ct_lines   = lt_act ).
-        ELSE.
-          lcl_mustache_lib=>render_section(
-            EXPORTING
-              is_statics = ls_statics
-              i_data     = ls_simple
-            CHANGING
-              ct_lines   = lt_act ).
-        ENDIF.
-        lv_act = lcl_mustache_utils=>join_strings( it_tab = lt_act iv_sep = '' ).
-
-
-        cl_abap_unit_assert=>assert_equals(
-          exp = lv_exp
-          act = lv_act
-          msg = |render_section, case { lv_idx }| ).
-      CATCH lcx_mustache_error INTO lx.
-        cl_abap_unit_assert=>fail( lx->msg ).
-      ENDTRY.
-
-    ENDDO.
-
-  ENDMETHOD. "render_section
-
   METHOD render_w_partials.
 
     DATA:
@@ -804,3 +523,314 @@ CLASS ltcl_mustache IMPLEMENTATION.
   ENDMETHOD. "add_partial
 
 ENDCLASS. "ltcl_mustache
+
+CLASS ltcl_mustache_parser DEFINITION FINAL
+  FOR TESTING RISK LEVEL HARMLESS DURATION SHORT.
+
+
+  PRIVATE SECTION.
+
+    CONSTANTS c_nl TYPE c VALUE cl_abap_char_utilities=>newline.
+
+    METHODS parse_template          FOR TESTING.
+    METHODS parse_template_table    FOR TESTING.
+    METHODS parse_template_negative FOR TESTING.
+    METHODS parse_tag               FOR TESTING.
+    METHODS parse_tag_negative      FOR TESTING.
+
+ENDCLASS.
+
+CLASS ltcl_mustache_parser IMPLEMENTATION.
+
+  METHOD parse_template.
+
+    DATA:
+          lt_exp      TYPE lcl_mustache=>ty_token_tt,
+          lt_act      TYPE lcl_mustache=>ty_token_tt,
+          lv_count    TYPE i,
+          lv_idx      TYPE i,
+          lv_template TYPE string,
+          lx          TYPE REF TO lcx_mustache_error.
+
+    ltcl_mustache=>get_test_case( IMPORTING ev_count = lv_count ).
+
+    DO lv_count TIMES.
+      lv_idx = sy-index.
+      ltcl_mustache=>get_test_case( EXPORTING iv_index    = lv_idx
+                     IMPORTING ev_template = lv_template
+                               et_tokens   = lt_exp ).
+
+      TRY .
+        lt_act = lcl_mustache_parser=>parse_template( lv_template ).
+        cl_abap_unit_assert=>assert_equals(
+          exp = lt_exp
+          act = lt_act
+          msg = |parse_template, case { lv_idx }| ).
+      CATCH lcx_mustache_error INTO lx.
+        cl_abap_unit_assert=>fail( lx->msg ).
+      ENDTRY.
+
+    ENDDO.
+
+  ENDMETHOD.  " parse_template.
+
+  METHOD parse_template_negative.
+
+    DATA:
+          lt_tab TYPE ltcl_mustache=>ty_tag_rc_tt,
+          lx     TYPE REF TO lcx_mustache_error.
+
+    FIELD-SYMBOLS <rcline> LIKE LINE OF lt_tab.
+
+    _add_mu_val_rc lt_tab 'Hello {{name}!'               'CTNF'.
+    _add_mu_val_rc lt_tab 'Good {{#pm}}afternoon'        'SNC'.
+    _add_mu_val_rc lt_tab 'Good afternoon{{/pm}}'        'CNOS'.
+    _add_mu_val_rc lt_tab 'Good {{#pm}}afternoon{{/am}}' 'CSM'.
+
+    LOOP AT lt_tab ASSIGNING <rcline>.
+      CLEAR lx.
+      TRY .
+        lcl_mustache_parser=>parse_template( <rcline>-val ).
+      CATCH lcx_mustache_error INTO lx.
+        ASSERT 1 = 1.
+      ENDTRY.
+      cl_abap_unit_assert=>assert_not_initial( act = lx ).
+      cl_abap_unit_assert=>assert_equals( exp = <rcline>-rc act = lx->rc ).
+    ENDLOOP.
+
+  ENDMETHOD. "parse_template_negative
+
+  METHOD parse_template_table.
+
+    DATA:
+          lt_exp      TYPE lcl_mustache=>ty_token_tt,
+          lt_act      TYPE lcl_mustache=>ty_token_tt,
+          lt_template TYPE string_table,
+          lx          TYPE REF TO lcx_mustache_error.
+
+    FIELD-SYMBOLS <token> LIKE LINE OF lt_exp.
+
+    APPEND 'Our sales:'              TO lt_template.
+    APPEND '{{#items}}'              TO lt_template.
+    APPEND '* {{name}} - ${{price}}' TO lt_template.
+    APPEND '{{/items}}'              TO lt_template.
+
+    _add_mu_token lt_exp lcl_mustache=>c_token_type-static      ''  1   `Our sales:`.
+    _add_mu_token lt_exp lcl_mustache=>c_token_type-static      ''  1   c_nl.
+    _add_mu_token lt_exp lcl_mustache=>c_token_type-section     '=' 1   'items'.
+    _add_mu_token lt_exp lcl_mustache=>c_token_type-static      ''  2   `* `.
+    _add_mu_token lt_exp lcl_mustache=>c_token_type-etag        ''  2   'name'.
+    _add_mu_token lt_exp lcl_mustache=>c_token_type-static      ''  2   ` - $`.
+    _add_mu_token lt_exp lcl_mustache=>c_token_type-etag        ''  2   'price'.
+    _add_mu_token lt_exp lcl_mustache=>c_token_type-static      ''  2   c_nl.
+
+    TRY.
+      lt_act = lcl_mustache_parser=>parse_template( it_template = lt_template ).
+    CATCH lcx_mustache_error INTO lx.
+      cl_abap_unit_assert=>fail( lx->msg ).
+    ENDTRY.
+    cl_abap_unit_assert=>assert_equals( exp = lt_exp act = lt_act ).
+
+  ENDMETHOD.  " parse_template_table
+
+  METHOD parse_tag.
+
+    DATA:
+          lt_exp TYPE lcl_mustache=>ty_token_tt,
+          lt_act TYPE lcl_mustache=>ty_token_tt,
+          lx TYPE REF TO lcx_mustache_error.
+
+    FIELD-SYMBOLS <token> LIKE LINE OF lt_exp.
+
+    TRY .
+      APPEND lcl_mustache_parser=>parse_tag( 'name' ) TO lt_act.
+      APPEND lcl_mustache_parser=>parse_tag( '{ name }' ) TO lt_act.
+      APPEND lcl_mustache_parser=>parse_tag( '&name' ) TO lt_act.
+      APPEND lcl_mustache_parser=>parse_tag( '#name' ) TO lt_act.
+      APPEND lcl_mustache_parser=>parse_tag( '# name ' ) TO lt_act.
+      APPEND lcl_mustache_parser=>parse_tag( '^name' ) TO lt_act.
+      APPEND lcl_mustache_parser=>parse_tag( '/name' ) TO lt_act.
+      APPEND lcl_mustache_parser=>parse_tag( '!name' ) TO lt_act.
+      APPEND lcl_mustache_parser=>parse_tag( '= {*  *} =' ) TO lt_act.
+    CATCH lcx_mustache_error INTO lx.
+      cl_abap_unit_assert=>fail( lx->msg ).
+    ENDTRY.
+
+    "                    TYPE                                  COND LEV CONTENT
+    _add_mu_token lt_exp lcl_mustache=>c_token_type-etag        ''  0   'name'.
+    _add_mu_token lt_exp lcl_mustache=>c_token_type-utag        ''  0   'name'.
+    _add_mu_token lt_exp lcl_mustache=>c_token_type-utag        ''  0   'name'.
+    _add_mu_token lt_exp lcl_mustache=>c_token_type-section     '=' 0   'name'.
+    _add_mu_token lt_exp lcl_mustache=>c_token_type-section     '=' 0   'name'.
+    _add_mu_token lt_exp lcl_mustache=>c_token_type-section     '!' 0   'name'.
+    _add_mu_token lt_exp lcl_mustache=>c_token_type-section_end ''  0   'name'.
+    _add_mu_token lt_exp lcl_mustache=>c_token_type-comment     ''  0   'name'.
+    _add_mu_token lt_exp lcl_mustache=>c_token_type-delimiter   ''  0   '{* *}'. " Boobs :)
+
+    cl_abap_unit_assert=>assert_equals( exp = lt_exp act = lt_act ).
+
+  ENDMETHOD. "parse_tag
+
+  METHOD parse_tag_negative.
+
+    DATA:
+          lt_tab TYPE ltcl_mustache=>ty_tag_rc_tt,
+          lx     TYPE REF TO lcx_mustache_error.
+
+    FIELD-SYMBOLS <rcline> LIKE LINE OF lt_tab.
+
+    _add_mu_val_rc lt_tab ''        'ET'.
+    _add_mu_val_rc lt_tab '{}'      'ET'.
+    _add_mu_val_rc lt_tab '   '     'ET'.
+    _add_mu_val_rc lt_tab '{   }'   'ET'.
+    _add_mu_val_rc lt_tab '{name'   'MC}'.
+    _add_mu_val_rc lt_tab '=name'   'MC='.
+    _add_mu_val_rc lt_tab '#'       'ET'.
+    _add_mu_val_rc lt_tab '=xxx='   'CDF'.
+    _add_mu_val_rc lt_tab '=x x x=' 'CDF'.
+
+    LOOP AT lt_tab ASSIGNING <rcline>.
+      CLEAR lx.
+      TRY .
+        lcl_mustache_parser=>parse_tag( <rcline>-val ).
+      CATCH lcx_mustache_error INTO lx.
+        ASSERT 1 = 1.
+      ENDTRY.
+      cl_abap_unit_assert=>assert_not_initial( act = lx ).
+      cl_abap_unit_assert=>assert_equals( exp = <rcline>-rc act = lx->rc ).
+    ENDLOOP.
+
+  ENDMETHOD. "parse_tag_negative
+
+ENDCLASS.
+
+CLASS ltcl_mustache_render DEFINITION FINAL
+  FOR TESTING RISK LEVEL HARMLESS DURATION SHORT.
+
+  PRIVATE SECTION.
+
+    METHODS find_value              FOR TESTING.
+    METHODS render_section          FOR TESTING.
+
+ENDCLASS.
+
+CLASS ltcl_mustache_render IMPLEMENTATION.
+
+  METHOD find_value.
+
+    DATA:
+          lr            TYPE REF TO data,
+          lt_data_stack TYPE lcl_mustache=>ty_ref_tt,
+          ls_dummy      TYPE lcl_mustache=>ty_struc,
+          lt_dummy      TYPE lcl_mustache=>ty_struc_tt,
+          lv_act        TYPE string,
+          lx            TYPE REF TO lcx_mustache_error.
+
+    ls_dummy-name = 'abc'.
+    ls_dummy-val  = '123'.
+    APPEND ls_dummy TO lt_dummy.
+
+    "1----------------
+    CLEAR lt_data_stack.
+    GET REFERENCE OF ls_dummy INTO lr.
+    APPEND lr TO lt_data_stack.
+
+    TRY .
+      lv_act = lcl_mustache_render=>find_value( it_data_stack = lt_data_stack iv_name = 'NAME' ).
+      cl_abap_unit_assert=>assert_equals( exp = 'abc' act = lv_act ).
+    CATCH lcx_mustache_error INTO lx.
+      cl_abap_unit_assert=>fail( lx->msg ).
+    ENDTRY.
+
+    "2----------------
+    CLEAR lt_data_stack.
+    GET REFERENCE OF lt_dummy INTO lr.
+    APPEND lr TO lt_data_stack.
+
+    TRY .
+      lv_act = lcl_mustache_render=>find_value( it_data_stack = lt_data_stack iv_name = 'Abc' ).
+      cl_abap_unit_assert=>assert_equals( exp = '123' act = lv_act ).
+    CATCH lcx_mustache_error INTO lx.
+      cl_abap_unit_assert=>fail( lx->msg ).
+    ENDTRY.
+
+    "3----------------
+    CLEAR lt_data_stack.
+    GET REFERENCE OF ls_dummy INTO lr.
+    APPEND lr TO lt_data_stack.
+    GET REFERENCE OF lt_dummy INTO lr.
+    APPEND lr TO lt_data_stack.
+
+    TRY .
+      lv_act = lcl_mustache_render=>find_value( it_data_stack = lt_data_stack iv_name = 'Abc' ).
+      cl_abap_unit_assert=>assert_equals( exp = '123' act = lv_act ).
+      lv_act = lcl_mustache_render=>find_value( it_data_stack = lt_data_stack iv_name = 'name' ).
+      cl_abap_unit_assert=>assert_equals( exp = 'abc' act = lv_act ).
+    CATCH lcx_mustache_error INTO lx.
+      cl_abap_unit_assert=>fail( lx->msg ).
+    ENDTRY.
+
+  ENDMETHOD.  " find_value.
+
+  METHOD render_section.
+
+    DATA:
+          ls_statics      TYPE lcl_mustache=>ty_context,
+          ls_simple       TYPE ltcl_mustache=>ty_dummy,
+          lt_complex      TYPE lcl_mustache=>ty_struc_tt,
+          lv_count        TYPE i,
+          lv_idx          TYPE i,
+          iv_complex_test TYPE abap_bool,
+          lv_exp          TYPE string,
+          lv_act          TYPE string,
+          lt_act          TYPE string_table,
+          lx              TYPE REF TO lcx_mustache_error.
+
+    ltcl_mustache=>get_test_case( IMPORTING ev_count = lv_count ).
+    ltcl_mustache=>get_test_data( IMPORTING es_simple   = ls_simple
+                             et_complex  = lt_complex ).
+    ls_statics-x_format = cl_abap_format=>e_html_text.
+
+    DO lv_count TIMES.
+      lv_idx = sy-index.
+      ltcl_mustache=>get_test_case(
+        EXPORTING
+          iv_index        = lv_idx
+        IMPORTING
+          ev_output       = lv_exp
+          et_tokens       = ls_statics-tokens
+          ev_complex_test = iv_complex_test ).
+
+      CLEAR lt_act.
+      TRY .
+        IF iv_complex_test = abap_true.
+          lcl_mustache_render=>render_section(
+            EXPORTING
+              is_statics = ls_statics
+              i_data     = lt_complex
+            CHANGING
+              ct_lines   = lt_act ).
+        ELSE.
+          lcl_mustache_render=>render_section(
+            EXPORTING
+              is_statics = ls_statics
+              i_data     = ls_simple
+            CHANGING
+              ct_lines   = lt_act ).
+        ENDIF.
+        lv_act = lcl_mustache_utils=>join_strings( it_tab = lt_act iv_sep = '' ).
+
+
+        cl_abap_unit_assert=>assert_equals(
+          exp = lv_exp
+          act = lv_act
+          msg = |render_section, case { lv_idx }| ).
+      CATCH lcx_mustache_error INTO lx.
+        cl_abap_unit_assert=>fail( lx->msg ).
+      ENDTRY.
+
+    ENDDO.
+
+  ENDMETHOD. "render_section
+
+ENDCLASS.
