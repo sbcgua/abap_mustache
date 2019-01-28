@@ -1,7 +1,8 @@
 interface zif_mustache
   public .
 
-  constants c_version type string value '2.0.0'. " Package version
+  constants version type string value '2.0.0'. " Package version
+  constants homepage type string value 'https://github.com/sbcgua/abap_mustache'.
 
   types:
     ty_x_format  like cl_abap_format=>e_html_text,

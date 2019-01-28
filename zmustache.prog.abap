@@ -44,6 +44,13 @@ CLASS lcl_mustache_utils DEFINITION FINAL.
                 iv_sep         TYPE clike OPTIONAL
       RETURNING VALUE(rv_text) TYPE string.
 
+    class-methods CHECK_VERSION_FITS
+      importing
+        !I_REQUIRED_VERSION type STRING
+        !I_CURRENT_VERSION type STRING
+      returning
+        value(R_FITS) type ABAP_BOOL .
+
 ENDCLASS. "lcl_mustache_utils
 
 CLASS lcl_mustache_utils IMPLEMENTATION.
@@ -76,6 +83,37 @@ CLASS lcl_mustache_utils IMPLEMENTATION.
     CONCATENATE LINES OF it_tab INTO rv_text SEPARATED BY lv_sep.
 
   ENDMETHOD. "join_strings
+
+  method check_version_fits.
+
+    types:
+      begin of ty_version,
+        major type numc4,
+        minor type numc4,
+        patch type numc4,
+      end of ty_version.
+
+    data ls_cur_ver type ty_version.
+    data ls_req_ver type ty_version.
+    data lv_buf type string.
+
+    lv_buf = i_current_version.
+    shift lv_buf left deleting leading 'v'.
+    split lv_buf at '.' into ls_cur_ver-major ls_cur_ver-minor ls_cur_ver-patch.
+
+    lv_buf = i_required_version.
+    shift lv_buf left deleting leading 'v'.
+    split lv_buf at '.' into ls_req_ver-major ls_req_ver-minor ls_req_ver-patch.
+
+    if ls_req_ver-major <= ls_cur_ver-major.
+      if ls_req_ver-minor <= ls_cur_ver-minor.
+        if ls_req_ver-patch <= ls_cur_ver-patch.
+          r_fits = abap_true.
+        endif.
+      endif.
+    endif.
+
+  endmethod.
 
 ENDCLASS. "lcl_mustache_utils
 
@@ -134,6 +172,12 @@ CLASS lcl_mustache DEFINITION FINAL
       PREFERRED PARAMETER iv_template
       RAISING
         zcx_mustache_error.
+
+    class-methods CHECK_VERSION_FITS
+      importing
+        !I_REQUIRED_VERSION type STRING
+      returning
+        value(R_FITS) type ABAP_BOOL .
 
   PRIVATE SECTION.
     DATA mt_tokens   TYPE zif_mustache=>ty_token_tt.
@@ -1055,5 +1099,13 @@ CLASS lcl_mustache IMPLEMENTATION.
   METHOD get_tokens.
     rt_tokens = mt_tokens.
   ENDMETHOD.
+
+  method CHECK_VERSION_FITS.
+
+    r_fits = lcl_mustache_utils=>check_version_fits(
+      i_current_version  = zif_mustache=>version
+      i_required_version = i_required_version ).
+
+  endmethod.
 
 ENDCLASS. "lcl_mustache

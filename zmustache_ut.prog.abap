@@ -82,6 +82,7 @@ CLASS ltcl_mustache_utils DEFINITION FINAL
   PRIVATE SECTION.
     METHODS split_string FOR TESTING.
     METHODS join_strings FOR TESTING.
+    methods check_version_fits for testing.
 
 ENDCLASS. "ltcl_mustache_utils
 
@@ -127,6 +128,37 @@ CLASS ltcl_mustache_utils IMPLEMENTATION.
       exp = 'ABC' && 'X' && '123' ).
 
   ENDMETHOD. "join_strings
+
+  method check_version_fits.
+    cl_abap_unit_assert=>assert_true(
+      zcl_text2tab_utils=>check_version_fits(
+        i_current_version = 'v2.2.2'
+        i_required_version = 'v2.2.2' ) ).
+    cl_abap_unit_assert=>assert_true(
+      zcl_text2tab_utils=>check_version_fits(
+        i_current_version = 'v2.2.2'
+        i_required_version = 'v2.1.2' ) ).
+    cl_abap_unit_assert=>assert_true(
+      zcl_text2tab_utils=>check_version_fits(
+        i_current_version = 'v2.2.2'
+        i_required_version = 'v1.0.0' ) ).
+    cl_abap_unit_assert=>assert_false(
+      zcl_text2tab_utils=>check_version_fits(
+        i_current_version = 'v2.2.2'
+        i_required_version = 'v2.2.3' ) ).
+    cl_abap_unit_assert=>assert_false(
+      zcl_text2tab_utils=>check_version_fits(
+        i_current_version = 'v2.2.2'
+        i_required_version = 'v2.2.30' ) ).
+    cl_abap_unit_assert=>assert_false(
+      zcl_text2tab_utils=>check_version_fits(
+        i_current_version = 'v2.2.2'
+        i_required_version = 'v2.3.1' ) ).
+    cl_abap_unit_assert=>assert_false(
+      zcl_text2tab_utils=>check_version_fits(
+        i_current_version = 'v2.2.2'
+        i_required_version = 'v3.0.0' ) ).
+  endmethod.
 
 ENDCLASS. "ltcl_mustache_utils
 
