@@ -30,7 +30,7 @@ CLASS lcl_mustache_perf_test DEFINITION FINAL.
       END OF ty_item,
       ty_item_tt TYPE STANDARD TABLE OF ty_item WITH DEFAULT KEY,
 
-      ty_tab_ty_struc_tt TYPE STANDARD TABLE OF lcl_mustache=>ty_struc_tt.
+      ty_tab_ty_struc_tt TYPE STANDARD TABLE OF zif_mustache=>ty_struc_tt.
 
     CLASS-METHODS do_perf_test.
 
@@ -52,10 +52,10 @@ CLASS lcl_mustache_perf_test IMPLEMENTATION.
 
     DATA:
           lo_mustache TYPE REF TO lcl_mustache,
-          lt_data     TYPE lcl_mustache=>ty_struc_tt,
+          lt_data     TYPE zif_mustache=>ty_struc_tt,
           lv_act      TYPE string,
           lv_banner   TYPE string,
-          lx          TYPE REF TO lcx_mustache_error.
+          lx          TYPE REF TO zcx_mustache_error.
 
     DATA: lv_sta_time     TYPE timestampl,
           lv_end_time     TYPE timestampl,
@@ -148,7 +148,7 @@ CLASS lcl_mustache_perf_test IMPLEMENTATION.
         } iterations|.
       WRITE: / lv_banner.
 
-    CATCH lcx_mustache_error INTO lx.
+    CATCH zcx_mustache_error INTO lx.
       WRITE: / 'Exception:', lx->msg.
     ENDTRY.
 

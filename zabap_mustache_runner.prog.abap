@@ -29,7 +29,7 @@ data lv_footer   type string.
 * Example with ty_struc_tt table - a universal structure table
 **********************************************************************
 
-data lt_data1    type lcl_mustache=>ty_struc_tt.    " Universal structure
+data lt_data1    type zif_mustache=>ty_struc_tt.    " Universal structure
 field-symbols <l> like line of lt_data1.
 
 append initial line to lt_data1 assigning <l>.

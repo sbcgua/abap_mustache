@@ -170,7 +170,7 @@ CLASS ltcl_mustache DEFINITION FINAL
     TYPES:
       BEGIN OF ty_test_case,
         template     TYPE string,
-        tokens       TYPE lcl_mustache=>ty_token_tt,
+        tokens       TYPE zif_mustache=>ty_token_tt,
         output       TYPE string,
         complex_test TYPE abap_bool,
       END OF ty_test_case,
@@ -185,11 +185,11 @@ CLASS ltcl_mustache DEFINITION FINAL
       EXPORTING ev_count        TYPE i
                 ev_complex_test TYPE abap_bool
                 ev_template     TYPE string
-                et_tokens       TYPE lcl_mustache=>ty_token_tt
+                et_tokens       TYPE zif_mustache=>ty_token_tt
                 ev_output       TYPE string.
     CLASS-METHODS get_test_data
       EXPORTING es_simple   TYPE ty_dummy
-                et_complex  TYPE lcl_mustache=>ty_struc_tt.
+                et_complex  TYPE zif_mustache=>ty_struc_tt.
 
   PRIVATE SECTION.
 
@@ -214,66 +214,66 @@ CLASS ltcl_mustache IMPLEMENTATION.
     " Case 1
     APPEND INITIAL LINE TO gt_test_case_stash ASSIGNING <t>.
     <t>-template = 'Hello {{name}}!'.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-static      ''  1   `Hello `.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-etag        ''  1   'name'.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-static      ''  1   '!'.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-static      ''  1   `Hello `.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-etag        ''  1   'name'.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-static      ''  1   '!'.
     <t>-output = 'Hello Anonymous network user!'.
 
     " Case 2
     APPEND INITIAL LINE TO gt_test_case_stash ASSIGNING <t>.
     <t>-template = 'Hello {{name}}'.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-static      ''  1   `Hello `.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-etag        ''  1   'name'.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-static      ''  1   `Hello `.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-etag        ''  1   'name'.
     <t>-output = 'Hello Anonymous network user'.
 
     " Case 3
     APPEND INITIAL LINE TO gt_test_case_stash ASSIGNING <t>.
     <t>-template = '{{name}} Hello'.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-etag        ''  1   'name'.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-static      ''  1   ` Hello`.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-etag        ''  1   'name'.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-static      ''  1   ` Hello`.
     <t>-output = 'Anonymous network user Hello'.
 
     " Case 4
     APPEND INITIAL LINE TO gt_test_case_stash ASSIGNING <t>.
     <t>-template = 'Good {{#pm}}afternoon{{/pm}}{{^pm}}morning{{/pm}}, {{name}}'.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-static      ''  1   `Good `.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-section     '=' 1   'pm'.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-static      ''  2   `afternoon`.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-section     '!' 1   'pm'.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-static      ''  2   `morning`.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-static      ''  1   `, `.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-etag        ''  1   'name'.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-static      ''  1   `Good `.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-section     '=' 1   'pm'.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-static      ''  2   `afternoon`.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-section     '!' 1   'pm'.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-static      ''  2   `morning`.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-static      ''  1   `, `.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-etag        ''  1   'name'.
     <t>-output = 'Good afternoon, Anonymous network user'.
 
     " Case 5
     APPEND INITIAL LINE TO gt_test_case_stash ASSIGNING <t>.
     <t>-template = 'Good {{^am}}afternoon{{/am}}{{#am}}morning{{/am}}, {{name}}'.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-static      ''  1   `Good `.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-section     '!' 1   'am'.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-static      ''  2   `afternoon`.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-section     '=' 1   'am'.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-static      ''  2   `morning`.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-static      ''  1   `, `.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-etag        ''  1   'name'.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-static      ''  1   `Good `.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-section     '!' 1   'am'.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-static      ''  2   `afternoon`.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-section     '=' 1   'am'.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-static      ''  2   `morning`.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-static      ''  1   `, `.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-etag        ''  1   'name'.
     <t>-output = 'Good afternoon, Anonymous network user'.
 
     " Case 6
     APPEND INITIAL LINE TO gt_test_case_stash ASSIGNING <t>.
     <t>-template = '{{!comment}}{{html}} {{{html}}} {{&html}}'.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-etag        ''  1   'html'.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-static      ''  1   ` `.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-utag        ''  1   'html'.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-static      ''  1   ` `.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-utag        ''  1   'html'.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-etag        ''  1   'html'.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-static      ''  1   ` `.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-utag        ''  1   'html'.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-static      ''  1   ` `.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-utag        ''  1   'html'.
     <t>-output = '&lt;tag&gt;&amp; <tag>& <tag>&'.
 
     " Case 7
     APPEND INITIAL LINE TO gt_test_case_stash ASSIGNING <t>.
     <t>-template = '{{pm}}{{=<* *>=}}<*pm*>{{xx}}<*={{ }}=*>{{pm}}'.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-etag        ''  1   'pm'.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-etag        ''  1   'pm'.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-static      ''  1   `{{xx}}`.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-etag        ''  1   'pm'.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-etag        ''  1   'pm'.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-etag        ''  1   'pm'.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-static      ''  1   `{{xx}}`.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-etag        ''  1   'pm'.
     <t>-output = 'XX{{xx}}X'.
 
     " Case 8
@@ -285,18 +285,18 @@ CLASS ltcl_mustache IMPLEMENTATION.
                    '* {{name}} - ${{price}}'                && "c_nl &&
                    '  sizes: {{#sizes}}{{size}},{{/sizes}}' && "c_nl &&
                    '{{/items}}'.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-static      ''  1   `Welcome to `.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-etag        ''  1   'shop'.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-static      ''  1   `Our sales:`.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-section     '=' 1   'items'.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-static      ''  2   `* `.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-etag        ''  2   'name'.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-static      ''  2   ` - $`.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-etag        ''  2   'price'.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-static      ''  2   `  sizes: `.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-section     '=' 2   'sizes'.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-etag        ''  3   'size'.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-static      ''  3   `,`.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-static      ''  1   `Welcome to `.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-etag        ''  1   'shop'.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-static      ''  1   `Our sales:`.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-section     '=' 1   'items'.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-static      ''  2   `* `.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-etag        ''  2   'name'.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-static      ''  2   ` - $`.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-etag        ''  2   'price'.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-static      ''  2   `  sizes: `.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-section     '=' 2   'sizes'.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-etag        ''  3   'size'.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-static      ''  3   `,`.
     <t>-output   = 'Welcome to Shopsky'                     && "c_nl &&
                    'Our sales:'                             && "c_nl &&
                    '* Boots - $99.00'                       && "c_nl &&
@@ -311,14 +311,14 @@ CLASS ltcl_mustache IMPLEMENTATION.
                    `  {{#items}}  `                         && c_nl &&
                    '* {{name}} - ${{price}}'                && c_nl &&
                    `  {{/items}}  `.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-static      ''  1   `Our sales:`.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-static      ''  1   c_nl.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-section     '=' 1   'items'.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-static      ''  2   `* `.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-etag        ''  2   'name'.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-static      ''  2   ` - $`.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-etag        ''  2   'price'.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-static      ''  2   c_nl.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-static      ''  1   `Our sales:`.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-static      ''  1   c_nl.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-section     '=' 1   'items'.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-static      ''  2   `* `.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-etag        ''  2   'name'.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-static      ''  2   ` - $`.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-etag        ''  2   'price'.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-static      ''  2   c_nl.
     <t>-output   = 'Our sales:'                             && c_nl &&
                    '* Boots - $99.00'                       && c_nl &&
                    '* T-short - $49.00'                     && c_nl.
@@ -326,9 +326,9 @@ CLASS ltcl_mustache IMPLEMENTATION.
     " Case 10
     APPEND INITIAL LINE TO gt_test_case_stash ASSIGNING <t>.
     <t>-template = '{{#tab}}{{@tabline}},{{/tab}}'.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-section     '=' 1   'tab'.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-etag        ''  2   '@tabline'.
-    _add_mu_token <t>-tokens lcl_mustache=>c_token_type-static      ''  2   `,`.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-section     '=' 1   'tab'.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-etag        ''  2   '@tabline'.
+    _add_mu_token <t>-tokens zif_mustache=>c_token_type-static      ''  2   `,`.
     <t>-output = 'line1,line2,'.
 
   ENDMETHOD.  " class_setup.
@@ -416,10 +416,10 @@ CLASS ltcl_mustache IMPLEMENTATION.
 
     DATA:
           lo_mustache TYPE REF TO lcl_mustache,
-          lt_data     TYPE lcl_mustache=>ty_struc_tt,
+          lt_data     TYPE zif_mustache=>ty_struc_tt,
           lv_exp      TYPE string,
           lv_act      TYPE string,
-          lx          TYPE REF TO lcx_mustache_error.
+          lx          TYPE REF TO zcx_mustache_error.
 
     get_test_data( IMPORTING et_complex  = lt_data ).
     lv_exp = 'Welcome to Shopsky' &&
@@ -443,7 +443,7 @@ CLASS ltcl_mustache IMPLEMENTATION.
       cl_abap_unit_assert=>assert_equals(
         exp = lv_exp
         act = lv_act ).
-    CATCH lcx_mustache_error INTO lx.
+    CATCH zcx_mustache_error INTO lx.
       cl_abap_unit_assert=>fail( lx->msg ).
     ENDTRY.
 
@@ -453,10 +453,10 @@ CLASS ltcl_mustache IMPLEMENTATION.
 
     DATA:
           lo_mustache TYPE REF TO lcl_mustache,
-          lt_data     TYPE lcl_mustache=>ty_struc_tt,
+          lt_data     TYPE zif_mustache=>ty_struc_tt,
           lt_exp      TYPE string_table,
           lt_act      TYPE string_table,
-          lx          TYPE REF TO lcx_mustache_error.
+          lx          TYPE REF TO zcx_mustache_error.
 
     get_test_data( IMPORTING et_complex  = lt_data ).
 
@@ -476,7 +476,7 @@ CLASS ltcl_mustache IMPLEMENTATION.
       cl_abap_unit_assert=>assert_equals(
         exp = lt_exp
         act = lt_act ).
-    CATCH lcx_mustache_error INTO lx.
+    CATCH zcx_mustache_error INTO lx.
       cl_abap_unit_assert=>fail( lx->msg ).
     ENDTRY.
 
@@ -489,7 +489,7 @@ CLASS ltcl_mustache IMPLEMENTATION.
           ls_dummy TYPE ty_dummy,
           lo_mustache TYPE REF TO lcl_mustache,
           lv_idx          TYPE i,
-          lx              TYPE REF TO lcx_mustache_error.
+          lx              TYPE REF TO zcx_mustache_error.
 
     FIELD-SYMBOLS <rcline> LIKE LINE OF lt_tab.
 
@@ -505,7 +505,7 @@ CLASS ltcl_mustache IMPLEMENTATION.
       TRY.
         lo_mustache = lcl_mustache=>create( <rcline>-val ).
         lo_mustache->render( ls_dummy ).
-      CATCH lcx_mustache_error INTO lx.
+      CATCH zcx_mustache_error INTO lx.
         ASSERT 1 = 1.
       ENDTRY.
       cl_abap_unit_assert=>assert_not_initial(
@@ -525,7 +525,7 @@ CLASS ltcl_mustache IMPLEMENTATION.
           lo_mustache TYPE REF TO lcl_mustache,
           lo_partial  TYPE REF TO lcl_mustache,
           ls_dummy    TYPE ty_dummy,
-          lx          TYPE REF TO lcx_mustache_error.
+          lx          TYPE REF TO zcx_mustache_error.
 
     " 1. Success
     TRY .
@@ -537,14 +537,14 @@ CLASS ltcl_mustache IMPLEMENTATION.
       cl_abap_unit_assert=>assert_equals(
         act = lines( lo_mustache->get_partials( ) )
         exp = 1 ).
-    CATCH lcx_mustache_error INTO lx.
+    CATCH zcx_mustache_error INTO lx.
       cl_abap_unit_assert=>fail( lx->msg ).
     ENDTRY.
 
     " 2. Duplicate name
     TRY .
       lo_mustache->add_partial( iv_name = 'partial1' io_obj = lo_partial ).
-    CATCH lcx_mustache_error INTO lx.
+    CATCH zcx_mustache_error INTO lx.
       ASSERT 1 = 1.
     ENDTRY.
     cl_abap_unit_assert=>assert_not_initial( act = lx ).
@@ -555,7 +555,7 @@ CLASS ltcl_mustache IMPLEMENTATION.
     TRY .
       CLEAR lo_partial.
       lo_mustache->add_partial( iv_name = 'partial2' io_obj = lo_partial ).
-    CATCH lcx_mustache_error INTO lx.
+    CATCH zcx_mustache_error INTO lx.
       ASSERT 1 = 1.
     ENDTRY.
     cl_abap_unit_assert=>assert_not_initial( act = lx ).
@@ -567,7 +567,7 @@ CLASS ltcl_mustache IMPLEMENTATION.
       lo_mustache = lcl_mustache=>create( 'Hello {{>partialLoop}}' ).
       lo_mustache->add_partial( iv_name = 'partialLoop' io_obj = lo_mustache ).
       lo_mustache->render( ls_dummy ).
-    CATCH lcx_mustache_error INTO lx.
+    CATCH zcx_mustache_error INTO lx.
       ASSERT 1 = 1.
     ENDTRY.
     cl_abap_unit_assert=>assert_not_initial( act = lx ).
@@ -581,7 +581,7 @@ CLASS ltcl_mustache IMPLEMENTATION.
     DATA lv_act  TYPE string.
     DATA lt_strings TYPE string_table.
     DATA lo_mustache TYPE REF TO lcl_mustache.
-    DATA lx          TYPE REF TO lcx_mustache_error.
+    DATA lx          TYPE REF TO zcx_mustache_error.
 
     CREATE OBJECT lo_data.
     APPEND 'hello' TO lt_strings.
@@ -599,7 +599,7 @@ CLASS ltcl_mustache IMPLEMENTATION.
       cl_abap_unit_assert=>assert_equals(
         exp = '-hello' && c_nl && '-world' && c_nl
         act = lv_act ).
-    CATCH lcx_mustache_error INTO lx.
+    CATCH zcx_mustache_error INTO lx.
       cl_abap_unit_assert=>fail( lx->msg ).
     ENDTRY.
 
@@ -611,11 +611,11 @@ CLASS ltcl_mustache IMPLEMENTATION.
     DATA lo_component TYPE REF TO ltcl_dummy_component.
     DATA lv_act  TYPE string.
     DATA lo_mustache TYPE REF TO lcl_mustache.
-    DATA lx          TYPE REF TO lcx_mustache_error.
+    DATA lx          TYPE REF TO zcx_mustache_error.
 
     TRY .
       lo_mustache = lcl_mustache=>create( '{{tag}}' ).
-    CATCH lcx_mustache_error INTO lx.
+    CATCH zcx_mustache_error INTO lx.
       cl_abap_unit_assert=>fail( lx->msg ).
     ENDTRY.
 
@@ -628,7 +628,7 @@ CLASS ltcl_mustache IMPLEMENTATION.
       cl_abap_unit_assert=>assert_equals(
         exp = 'hello world'
         act = lv_act ).
-    CATCH lcx_mustache_error INTO lx.
+    CATCH zcx_mustache_error INTO lx.
       cl_abap_unit_assert=>fail( lx->msg ).
     ENDTRY.
 
@@ -644,7 +644,7 @@ CLASS ltcl_mustache IMPLEMENTATION.
       cl_abap_unit_assert=>assert_equals(
         exp = 'hello world'
         act = lv_act ).
-    CATCH lcx_mustache_error INTO lx.
+    CATCH zcx_mustache_error INTO lx.
       cl_abap_unit_assert=>fail( lx->msg ).
     ENDTRY.
 
@@ -673,12 +673,12 @@ CLASS ltcl_mustache_parser IMPLEMENTATION.
   METHOD parse_template.
 
     DATA:
-          lt_exp      TYPE lcl_mustache=>ty_token_tt,
-          lt_act      TYPE lcl_mustache=>ty_token_tt,
+          lt_exp      TYPE zif_mustache=>ty_token_tt,
+          lt_act      TYPE zif_mustache=>ty_token_tt,
           lv_count    TYPE i,
           lv_idx      TYPE i,
           lv_template TYPE string,
-          lx          TYPE REF TO lcx_mustache_error.
+          lx          TYPE REF TO zcx_mustache_error.
 
     ltcl_mustache=>get_test_case( IMPORTING ev_count = lv_count ).
 
@@ -694,7 +694,7 @@ CLASS ltcl_mustache_parser IMPLEMENTATION.
           exp = lt_exp
           act = lt_act
           msg = |parse_template, case { lv_idx }| ).
-      CATCH lcx_mustache_error INTO lx.
+      CATCH zcx_mustache_error INTO lx.
         cl_abap_unit_assert=>fail( lx->msg ).
       ENDTRY.
 
@@ -706,7 +706,7 @@ CLASS ltcl_mustache_parser IMPLEMENTATION.
 
     DATA:
           lt_tab TYPE ltcl_mustache=>ty_tag_rc_tt,
-          lx     TYPE REF TO lcx_mustache_error.
+          lx     TYPE REF TO zcx_mustache_error.
 
     FIELD-SYMBOLS <rcline> LIKE LINE OF lt_tab.
 
@@ -719,7 +719,7 @@ CLASS ltcl_mustache_parser IMPLEMENTATION.
       CLEAR lx.
       TRY .
         lcl_mustache_parser=>parse_template( <rcline>-val ).
-      CATCH lcx_mustache_error INTO lx.
+      CATCH zcx_mustache_error INTO lx.
         ASSERT 1 = 1.
       ENDTRY.
       cl_abap_unit_assert=>assert_not_initial( act = lx ).
@@ -731,10 +731,10 @@ CLASS ltcl_mustache_parser IMPLEMENTATION.
   METHOD parse_template_table.
 
     DATA:
-          lt_exp      TYPE lcl_mustache=>ty_token_tt,
-          lt_act      TYPE lcl_mustache=>ty_token_tt,
+          lt_exp      TYPE zif_mustache=>ty_token_tt,
+          lt_act      TYPE zif_mustache=>ty_token_tt,
           lt_template TYPE string_table,
-          lx          TYPE REF TO lcx_mustache_error.
+          lx          TYPE REF TO zcx_mustache_error.
 
     FIELD-SYMBOLS <token> LIKE LINE OF lt_exp.
 
@@ -743,18 +743,18 @@ CLASS ltcl_mustache_parser IMPLEMENTATION.
     APPEND '* {{name}} - ${{price}}' TO lt_template.
     APPEND '{{/items}}'              TO lt_template.
 
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-static      ''  1   `Our sales:`.
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-static      ''  1   c_nl.
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-section     '=' 1   'items'.
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-static      ''  2   `* `.
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-etag        ''  2   'name'.
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-static      ''  2   ` - $`.
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-etag        ''  2   'price'.
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-static      ''  2   c_nl.
+    _add_mu_token lt_exp zif_mustache=>c_token_type-static      ''  1   `Our sales:`.
+    _add_mu_token lt_exp zif_mustache=>c_token_type-static      ''  1   c_nl.
+    _add_mu_token lt_exp zif_mustache=>c_token_type-section     '=' 1   'items'.
+    _add_mu_token lt_exp zif_mustache=>c_token_type-static      ''  2   `* `.
+    _add_mu_token lt_exp zif_mustache=>c_token_type-etag        ''  2   'name'.
+    _add_mu_token lt_exp zif_mustache=>c_token_type-static      ''  2   ` - $`.
+    _add_mu_token lt_exp zif_mustache=>c_token_type-etag        ''  2   'price'.
+    _add_mu_token lt_exp zif_mustache=>c_token_type-static      ''  2   c_nl.
 
     TRY.
       lt_act = lcl_mustache_parser=>parse_template( it_template = lt_template ).
-    CATCH lcx_mustache_error INTO lx.
+    CATCH zcx_mustache_error INTO lx.
       cl_abap_unit_assert=>fail( lx->msg ).
     ENDTRY.
     cl_abap_unit_assert=>assert_equals( exp = lt_exp act = lt_act ).
@@ -764,9 +764,9 @@ CLASS ltcl_mustache_parser IMPLEMENTATION.
   METHOD parse_tag.
 
     DATA:
-          lt_exp TYPE lcl_mustache=>ty_token_tt,
-          lt_act TYPE lcl_mustache=>ty_token_tt,
-          lx TYPE REF TO lcx_mustache_error.
+          lt_exp TYPE zif_mustache=>ty_token_tt,
+          lt_act TYPE zif_mustache=>ty_token_tt,
+          lx TYPE REF TO zcx_mustache_error.
 
     FIELD-SYMBOLS <token> LIKE LINE OF lt_exp.
 
@@ -780,20 +780,20 @@ CLASS ltcl_mustache_parser IMPLEMENTATION.
       APPEND lcl_mustache_parser=>parse_tag( '/name' ) TO lt_act.
       APPEND lcl_mustache_parser=>parse_tag( '!name' ) TO lt_act.
       APPEND lcl_mustache_parser=>parse_tag( '= {*  *} =' ) TO lt_act.
-    CATCH lcx_mustache_error INTO lx.
+    CATCH zcx_mustache_error INTO lx.
       cl_abap_unit_assert=>fail( lx->msg ).
     ENDTRY.
 
     "                    TYPE                                  COND LEV CONTENT
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-etag        ''  0   'name'.
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-utag        ''  0   'name'.
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-utag        ''  0   'name'.
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-section     '=' 0   'name'.
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-section     '=' 0   'name'.
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-section     '!' 0   'name'.
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-section_end ''  0   'name'.
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-comment     ''  0   'name'.
-    _add_mu_token lt_exp lcl_mustache=>c_token_type-delimiter   ''  0   '{* *}'. " Boobs :)
+    _add_mu_token lt_exp zif_mustache=>c_token_type-etag        ''  0   'name'.
+    _add_mu_token lt_exp zif_mustache=>c_token_type-utag        ''  0   'name'.
+    _add_mu_token lt_exp zif_mustache=>c_token_type-utag        ''  0   'name'.
+    _add_mu_token lt_exp zif_mustache=>c_token_type-section     '=' 0   'name'.
+    _add_mu_token lt_exp zif_mustache=>c_token_type-section     '=' 0   'name'.
+    _add_mu_token lt_exp zif_mustache=>c_token_type-section     '!' 0   'name'.
+    _add_mu_token lt_exp zif_mustache=>c_token_type-section_end ''  0   'name'.
+    _add_mu_token lt_exp zif_mustache=>c_token_type-comment     ''  0   'name'.
+    _add_mu_token lt_exp zif_mustache=>c_token_type-delimiter   ''  0   '{* *}'. " Boobs :)
 
     cl_abap_unit_assert=>assert_equals( exp = lt_exp act = lt_act ).
 
@@ -803,7 +803,7 @@ CLASS ltcl_mustache_parser IMPLEMENTATION.
 
     DATA:
           lt_tab TYPE ltcl_mustache=>ty_tag_rc_tt,
-          lx     TYPE REF TO lcx_mustache_error.
+          lx     TYPE REF TO zcx_mustache_error.
 
     FIELD-SYMBOLS <rcline> LIKE LINE OF lt_tab.
 
@@ -821,7 +821,7 @@ CLASS ltcl_mustache_parser IMPLEMENTATION.
       CLEAR lx.
       TRY .
         lcl_mustache_parser=>parse_tag( <rcline>-val ).
-      CATCH lcx_mustache_error INTO lx.
+      CATCH zcx_mustache_error INTO lx.
         ASSERT 1 = 1.
       ENDTRY.
       cl_abap_unit_assert=>assert_not_initial( act = lx ).
@@ -849,11 +849,11 @@ CLASS ltcl_mustache_render IMPLEMENTATION.
 
     DATA:
           lr            TYPE REF TO data,
-          lt_data_stack TYPE lcl_mustache=>ty_ref_tt,
-          ls_dummy      TYPE lcl_mustache=>ty_struc,
-          lt_dummy      TYPE lcl_mustache=>ty_struc_tt,
+          lt_data_stack TYPE zif_mustache=>ty_ref_tt,
+          ls_dummy      TYPE zif_mustache=>ty_struc,
+          lt_dummy      TYPE zif_mustache=>ty_struc_tt,
           lv_act        TYPE string,
-          lx            TYPE REF TO lcx_mustache_error.
+          lx            TYPE REF TO zcx_mustache_error.
 
     ls_dummy-name = 'abc'.
     ls_dummy-val  = '123'.
@@ -867,7 +867,7 @@ CLASS ltcl_mustache_render IMPLEMENTATION.
     TRY .
       lv_act = lcl_mustache_render=>find_value( it_data_stack = lt_data_stack iv_name = 'NAME' ).
       cl_abap_unit_assert=>assert_equals( exp = 'abc' act = lv_act ).
-    CATCH lcx_mustache_error INTO lx.
+    CATCH zcx_mustache_error INTO lx.
       cl_abap_unit_assert=>fail( lx->msg ).
     ENDTRY.
 
@@ -879,7 +879,7 @@ CLASS ltcl_mustache_render IMPLEMENTATION.
     TRY .
       lv_act = lcl_mustache_render=>find_value( it_data_stack = lt_data_stack iv_name = 'Abc' ).
       cl_abap_unit_assert=>assert_equals( exp = '123' act = lv_act ).
-    CATCH lcx_mustache_error INTO lx.
+    CATCH zcx_mustache_error INTO lx.
       cl_abap_unit_assert=>fail( lx->msg ).
     ENDTRY.
 
@@ -895,7 +895,7 @@ CLASS ltcl_mustache_render IMPLEMENTATION.
       cl_abap_unit_assert=>assert_equals( exp = '123' act = lv_act ).
       lv_act = lcl_mustache_render=>find_value( it_data_stack = lt_data_stack iv_name = 'name' ).
       cl_abap_unit_assert=>assert_equals( exp = 'abc' act = lv_act ).
-    CATCH lcx_mustache_error INTO lx.
+    CATCH zcx_mustache_error INTO lx.
       cl_abap_unit_assert=>fail( lx->msg ).
     ENDTRY.
 
@@ -906,14 +906,14 @@ CLASS ltcl_mustache_render IMPLEMENTATION.
     DATA:
           ls_statics      TYPE lcl_mustache=>ty_context,
           ls_simple       TYPE ltcl_mustache=>ty_dummy,
-          lt_complex      TYPE lcl_mustache=>ty_struc_tt,
+          lt_complex      TYPE zif_mustache=>ty_struc_tt,
           lv_count        TYPE i,
           lv_idx          TYPE i,
           iv_complex_test TYPE abap_bool,
           lv_exp          TYPE string,
           lv_act          TYPE string,
           lt_act          TYPE string_table,
-          lx              TYPE REF TO lcx_mustache_error.
+          lx              TYPE REF TO zcx_mustache_error.
 
     ltcl_mustache=>get_test_case( IMPORTING ev_count = lv_count ).
     ltcl_mustache=>get_test_data( IMPORTING es_simple   = ls_simple
@@ -954,7 +954,7 @@ CLASS ltcl_mustache_render IMPLEMENTATION.
           exp = lv_exp
           act = lv_act
           msg = |render_section, case { lv_idx }| ).
-      CATCH lcx_mustache_error INTO lx.
+      CATCH zcx_mustache_error INTO lx.
         cl_abap_unit_assert=>fail( lx->msg ).
       ENDTRY.
 
@@ -966,11 +966,11 @@ CLASS ltcl_mustache_render IMPLEMENTATION.
 
     DATA lo_data TYPE REF TO lcl_mustache_data.
     DATA lo_mustache TYPE REF TO lcl_mustache.
-    DATA lx          TYPE REF TO lcx_mustache_error.
+    DATA lx          TYPE REF TO zcx_mustache_error.
 
     TRY .
       lo_mustache = lcl_mustache=>create( '{{tag}}' ).
-    CATCH lcx_mustache_error INTO lx.
+    CATCH zcx_mustache_error INTO lx.
       cl_abap_unit_assert=>fail( lx->msg ).
     ENDTRY.
 
@@ -982,7 +982,7 @@ CLASS ltcl_mustache_render IMPLEMENTATION.
     lo_data->add( iv_name = 'tag' iv_val = lo_comp1 ).
     TRY .
       lo_mustache->render( lo_data->get( ) ).
-    CATCH lcx_mustache_error INTO lx.
+    CATCH zcx_mustache_error INTO lx.
       cl_abap_unit_assert=>assert_equals(
         exp = 'ODHR'
         act = lx->rc ).
@@ -997,7 +997,7 @@ CLASS ltcl_mustache_render IMPLEMENTATION.
     lo_data->add( iv_name = 'tag' iv_val = lo_comp2 ).
     TRY .
       lo_mustache->render( lo_data->get( ) ).
-    CATCH lcx_mustache_error INTO lx.
+    CATCH zcx_mustache_error INTO lx.
       cl_abap_unit_assert=>assert_equals(
         exp = 'ORRS'
         act = lx->rc ).
@@ -1012,7 +1012,7 @@ CLASS ltcl_mustache_render IMPLEMENTATION.
     lo_data->add( iv_name = 'tag' iv_val = lo_comp3 ).
     TRY .
       lo_mustache->render( lo_data->get( ) ).
-    CATCH lcx_mustache_error INTO lx.
+    CATCH zcx_mustache_error INTO lx.
       cl_abap_unit_assert=>assert_equals(
         exp = 'ORMP'
         act = lx->rc ).
@@ -1054,7 +1054,7 @@ CLASS ltcl_mustache_data IMPLEMENTATION.
 
     DATA lo_data TYPE REF TO lcl_mustache_data.
     DATA lt_strtab TYPE string_table.
-    DATA lt_exp TYPE lcl_mustache=>ty_struc_tt.
+    DATA lt_exp TYPE zif_mustache=>ty_struc_tt.
 
     FIELD-SYMBOLS <e> LIKE LINE OF lt_exp.
 
@@ -1087,7 +1087,7 @@ CLASS ltcl_mustache_data IMPLEMENTATION.
     APPEND 'Hello' TO lt_exptab.
     APPEND 'World' TO lt_exptab.
 
-    DATA lt_act TYPE lcl_mustache=>ty_struc_tt.
+    DATA lt_act TYPE zif_mustache=>ty_struc_tt.
     lt_act = lo_data->get( ).
 
     FIELD-SYMBOLS <e> LIKE LINE OF lt_act.
