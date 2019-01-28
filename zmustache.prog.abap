@@ -293,12 +293,12 @@ CLASS lcl_mustache_data IMPLEMENTATION.
 
   METHOD add.
 
-    DATA lo_type TYPE REF TO cl_abap_typedescr.
+    DATA lo_type TYPE REF TO cl_abap_datadescr.
     DATA ls_data LIKE LINE OF mt_data.
 
     ls_data-name = iv_name.
 
-    lo_type = cl_abap_typedescr=>describe_by_data( iv_val ).
+    lo_type ?= cl_abap_typedescr=>describe_by_data( iv_val ).
 
     CASE lo_type->kind.
       WHEN cl_abap_typedescr=>kind_class OR cl_abap_typedescr=>kind_intf.
@@ -315,7 +315,10 @@ CLASS lcl_mustache_data IMPLEMENTATION.
       WHEN cl_abap_typedescr=>kind_struct.
         GET REFERENCE OF iv_val INTO ls_data-dref.
       WHEN cl_abap_typedescr=>kind_table.
-        GET REFERENCE OF iv_val INTO ls_data-dref.
+        FIELD-SYMBOLS <tab> TYPE ANY TABLE.
+        CREATE DATA ls_data-dref TYPE HANDLE lo_type.
+        ASSIGN ls_data-dref->* TO <tab>.
+        <tab> = iv_val.
     ENDCASE.
 
     APPEND ls_data TO mt_data.

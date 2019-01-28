@@ -1029,10 +1029,26 @@ CLASS ltcl_mustache_data DEFINITION FINAL
   PRIVATE SECTION.
 
     METHODS test FOR TESTING.
+    METHODS test_tab_copy FOR TESTING.
+    METHODS gen_tab_data
+      RETURNING VALUE(ro_data) TYPE REF TO lcl_mustache_data.
 
 ENDCLASS.
 
 CLASS ltcl_mustache_data IMPLEMENTATION.
+
+  METHOD gen_tab_data.
+
+    DATA lt_strtab TYPE string_table.
+    APPEND 'Hello' TO lt_strtab.
+    APPEND 'World' TO lt_strtab.
+
+    CREATE OBJECT ro_data.
+
+    " Table is local, so a copy must be created inside
+    ro_data->add( iv_name = 'T' iv_val = lt_strtab ).
+
+  ENDMETHOD.
 
   METHOD test.
 
@@ -1048,17 +1064,39 @@ CLASS ltcl_mustache_data IMPLEMENTATION.
     CREATE OBJECT lo_data.
 
     lo_data->add( iv_name = 'A' iv_val = 'B' ).
-    lo_data->add( iv_name = 'T' iv_val = lt_strtab ).
+    lo_data->add( iv_name = 'O' iv_val = lo_data ).
 
     APPEND INITIAL LINE TO lt_exp ASSIGNING <e>.
     <e>-name = 'A'.
     <e>-val  = 'B'.
 
     APPEND INITIAL LINE TO lt_exp ASSIGNING <e>.
-    <e>-name = 'T'.
-    GET REFERENCE OF lt_strtab INTO <e>-dref.
+    <e>-name = 'O'.
+    <e>-oref = lo_data.
 
     cl_abap_unit_assert=>assert_equals( exp = lt_exp act = lo_data->get( ) ).
+
+  ENDMETHOD.
+
+  METHOD test_tab_copy.
+
+    DATA lo_data TYPE REF TO lcl_mustache_data.
+    lo_data = gen_tab_data( ).
+
+    DATA lt_exptab TYPE string_table.
+    APPEND 'Hello' TO lt_exptab.
+    APPEND 'World' TO lt_exptab.
+
+    DATA lt_act TYPE lcl_mustache=>ty_struc_tt.
+    lt_act = lo_data->get( ).
+
+    FIELD-SYMBOLS <e> LIKE LINE OF lt_act.
+    FIELD-SYMBOLS <tab> TYPE ANY TABLE.
+    cl_abap_unit_assert=>assert_equals( exp = 1 act = lines( lt_act ) ).
+    READ TABLE lt_act ASSIGNING <e> INDEX 1.
+    cl_abap_unit_assert=>assert_equals( exp = 'T' act = <e>-name ).
+    ASSIGN <e>-dref->* TO <tab>.
+    cl_abap_unit_assert=>assert_equals( exp = lt_exptab act = <tab> ).
 
   ENDMETHOD.
 
