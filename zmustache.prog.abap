@@ -34,8 +34,7 @@
 *       CLASS lcl_mustache DEFINITION
 *----------------------------------------------------------------------*
 CLASS lcl_mustache_render DEFINITION DEFERRED.
-CLASS lcl_mustache DEFINITION FINAL
-  FRIENDS lcl_mustache_render.
+CLASS lcl_mustache DEFINITION FINAL.
 
   PUBLIC SECTION.
 
