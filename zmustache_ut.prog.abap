@@ -609,7 +609,7 @@ CLASS ltcl_mustache IMPLEMENTATION.
 
   METHOD render_with_data_builder.
 
-    DATA lo_data TYPE REF TO lcl_mustache_data.
+    DATA lo_data TYPE REF TO zcl_mustache_data.
     DATA lv_act  TYPE string.
     DATA lt_strings TYPE string_table.
     DATA lo_mustache TYPE REF TO lcl_mustache.
@@ -639,7 +639,7 @@ CLASS ltcl_mustache IMPLEMENTATION.
 
   METHOD render_with_object.
 
-    DATA lo_data TYPE REF TO lcl_mustache_data.
+    DATA lo_data TYPE REF TO zcl_mustache_data.
     DATA lo_component TYPE REF TO ltcl_dummy_component.
     DATA lv_act  TYPE string.
     DATA lo_mustache TYPE REF TO lcl_mustache.
@@ -996,7 +996,7 @@ CLASS ltcl_mustache_render IMPLEMENTATION.
 
   METHOD render_oref_negative.
 
-    DATA lo_data TYPE REF TO lcl_mustache_data.
+    DATA lo_data TYPE REF TO zcl_mustache_data.
     DATA lo_mustache TYPE REF TO lcl_mustache.
     DATA lx          TYPE REF TO zcx_mustache_error.
 
@@ -1050,85 +1050,6 @@ CLASS ltcl_mustache_render IMPLEMENTATION.
         act = lx->rc ).
     ENDTRY.
     cl_abap_unit_assert=>assert_not_initial( lx ).
-
-  ENDMETHOD.
-
-ENDCLASS.
-
-CLASS ltcl_mustache_data DEFINITION FINAL
-  FOR TESTING RISK LEVEL HARMLESS DURATION SHORT.
-
-  PRIVATE SECTION.
-
-    METHODS test FOR TESTING.
-    METHODS test_tab_copy FOR TESTING.
-    METHODS gen_tab_data
-      RETURNING VALUE(ro_data) TYPE REF TO lcl_mustache_data.
-
-ENDCLASS.
-
-CLASS ltcl_mustache_data IMPLEMENTATION.
-
-  METHOD gen_tab_data.
-
-    DATA lt_strtab TYPE string_table.
-    APPEND 'Hello' TO lt_strtab.
-    APPEND 'World' TO lt_strtab.
-
-    CREATE OBJECT ro_data.
-
-    " Table is local, so a copy must be created inside
-    ro_data->add( iv_name = 'T' iv_val = lt_strtab ).
-
-  ENDMETHOD.
-
-  METHOD test.
-
-    DATA lo_data TYPE REF TO lcl_mustache_data.
-    DATA lt_strtab TYPE string_table.
-    DATA lt_exp TYPE zif_mustache=>ty_struc_tt.
-
-    FIELD-SYMBOLS <e> LIKE LINE OF lt_exp.
-
-    APPEND 'Hello' TO lt_strtab.
-    APPEND 'World' TO lt_strtab.
-
-    CREATE OBJECT lo_data.
-
-    lo_data->add( iv_name = 'A' iv_val = 'B' ).
-    lo_data->add( iv_name = 'O' iv_val = lo_data ).
-
-    APPEND INITIAL LINE TO lt_exp ASSIGNING <e>.
-    <e>-name = 'A'.
-    <e>-val  = 'B'.
-
-    APPEND INITIAL LINE TO lt_exp ASSIGNING <e>.
-    <e>-name = 'O'.
-    <e>-oref = lo_data.
-
-    cl_abap_unit_assert=>assert_equals( exp = lt_exp act = lo_data->get( ) ).
-
-  ENDMETHOD.
-
-  METHOD test_tab_copy.
-
-    DATA lo_data TYPE REF TO lcl_mustache_data.
-    lo_data = gen_tab_data( ).
-
-    DATA lt_exptab TYPE string_table.
-    APPEND 'Hello' TO lt_exptab.
-    APPEND 'World' TO lt_exptab.
-
-    DATA lt_act TYPE zif_mustache=>ty_struc_tt.
-    lt_act = lo_data->get( ).
-
-    FIELD-SYMBOLS <e> LIKE LINE OF lt_act.
-    FIELD-SYMBOLS <tab> TYPE ANY TABLE.
-    cl_abap_unit_assert=>assert_equals( exp = 1 act = lines( lt_act ) ).
-    READ TABLE lt_act ASSIGNING <e> INDEX 1.
-    cl_abap_unit_assert=>assert_equals( exp = 'T' act = <e>-name ).
-    ASSIGN <e>-dref->* TO <tab>.
-    cl_abap_unit_assert=>assert_equals( exp = lt_exptab act = <tab> ).
 
   ENDMETHOD.
 
