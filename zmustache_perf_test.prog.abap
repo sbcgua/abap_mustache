@@ -51,7 +51,7 @@ CLASS lcl_mustache_perf_test IMPLEMENTATION.
     CONSTANTS c_renders    TYPE i VALUE 10.
 
     DATA:
-          lo_mustache TYPE REF TO lcl_mustache,
+          lo_mustache TYPE REF TO zcl_mustache,
           lt_data     TYPE zif_mustache=>ty_struc_tt,
           lv_act      TYPE string,
           lv_banner   TYPE string,
@@ -86,7 +86,7 @@ CLASS lcl_mustache_perf_test IMPLEMENTATION.
 
 
     TRY .
-      lo_mustache = lcl_mustache=>create(
+      lo_mustache = zcl_mustache=>create(
         'Welcome to {{shop}}'                                &&
         'Our sales:'                                         &&
         '{{#items}}'                                         &&

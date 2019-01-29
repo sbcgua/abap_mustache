@@ -5,9 +5,6 @@
 *&---------------------------------------------------------------------*
 
 report zabap_mustache_runner.
-**********************************************************************
-
-include zmustache.
 include zmustache_perf_test.
 
 **********************************************************************
@@ -19,7 +16,7 @@ types:
     wish type string,
   end of ty_footer.
 
-data lo_mustache type ref to lcl_mustache.
+data lo_mustache type ref to zcl_mustache.
 data ls_data2    type ty_footer.
 data lv_greeting type string.
 data lv_footer   type string.
@@ -49,7 +46,7 @@ append initial line to lt_data1 assigning <l>.
 *  ( name = 'pm'   val = boolc( sy-uzeit > '130000' ) ) ).
 
 " Parse and render template
-lo_mustache = lcl_mustache=>create(
+lo_mustache = zcl_mustache=>create(
   'Good {{#pm}}afternoon{{/pm}}{{^pm}}morning{{/pm}}, {{user}} !' ).
 lv_greeting = lo_mustache->render( lt_data1 ).
 
@@ -68,7 +65,7 @@ else.
   ls_data2-wish = 'a nice day'.
 endif.
 
-lo_mustache = lcl_mustache=>create(
+lo_mustache = zcl_mustache=>create(
   'Have {{wish}}, {{user}} !' ).
 lv_footer = lo_mustache->render( ls_data2 ).
 
