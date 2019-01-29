@@ -846,7 +846,7 @@ CLASS ltcl_mustache_render IMPLEMENTATION.
   METHOD render_section.
 
     DATA:
-          ls_statics      TYPE lcl_mustache=>ty_context,
+          ls_statics      TYPE lcl_mustache_render=>ty_context,
           ls_simple       TYPE ltcl_mustache=>ty_dummy,
           lt_complex      TYPE zif_mustache=>ty_struc_tt,
           lv_count        TYPE i,

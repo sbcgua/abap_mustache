@@ -39,8 +39,6 @@ CLASS lcl_mustache DEFINITION FINAL
 
   PUBLIC SECTION.
 
-    CONSTANTS C_VERSION TYPE string VALUE '1.0.0'. " Package version
-
     INTERFACES zif_mustache.
     ALIASES:
       render FOR zif_mustache~render,
@@ -49,15 +47,6 @@ CLASS lcl_mustache DEFINITION FINAL
       get_partials FOR zif_mustache~get_partials,
       get_tokens FOR zif_mustache~get_tokens.
 
-    " TYPES ************************************************************
-
-    TYPES:
-      BEGIN OF ty_context,
-        tokens     TYPE zif_mustache=>ty_token_tt,
-        partials   TYPE zif_mustache=>ty_partial_tt,
-        x_format   TYPE zif_mustache=>ty_x_format,
-        part_depth TYPE i,
-      END OF ty_context.
 
     " METHODS **********************************************************
 
@@ -436,9 +425,17 @@ CLASS lcl_mustache_render DEFINITION FINAL.
         oref  TYPE char1  VALUE 'r',
       END OF c_data_type.
 
+    TYPES:
+      BEGIN OF ty_context,
+        tokens     TYPE zif_mustache=>ty_token_tt,
+        partials   TYPE zif_mustache=>ty_partial_tt,
+        x_format   TYPE zif_mustache=>ty_x_format,
+        part_depth TYPE i,
+      END OF ty_context.
+
     CLASS-METHODS render_section
       IMPORTING
-        is_statics    TYPE lcl_mustache=>ty_context
+        is_statics    TYPE ty_context
         i_data        TYPE any
         it_data_stack TYPE zif_mustache=>ty_ref_tt     OPTIONAL
         iv_start_idx  TYPE i             DEFAULT 1
@@ -450,7 +447,7 @@ CLASS lcl_mustache_render DEFINITION FINAL.
 
     CLASS-METHODS render_loop
       IMPORTING
-        is_statics    TYPE lcl_mustache=>ty_context
+        is_statics    TYPE ty_context
         it_data_stack TYPE zif_mustache=>ty_ref_tt
         iv_start_idx  TYPE i
         iv_path       TYPE string
@@ -576,7 +573,7 @@ CLASS lcl_mustache_render IMPLEMENTATION.
 
     DATA:
           lr         TYPE REF TO data,
-          ls_statics TYPE lcl_mustache=>ty_context,
+          ls_statics TYPE ty_context,
           lv_level   TYPE i,
           lv_idx     TYPE i,
           lv_val     TYPE string.
@@ -887,7 +884,7 @@ CLASS lcl_mustache IMPLEMENTATION.
   METHOD render.
 
     DATA: lt_temp    TYPE string_table,
-          ls_statics TYPE ty_context.
+          ls_statics TYPE lcl_mustache_render=>ty_context.
 
     ls_statics-tokens   = mt_tokens.
     ls_statics-partials = mt_partials.
