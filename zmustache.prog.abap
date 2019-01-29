@@ -27,97 +27,6 @@
 *\--------------------------------------------------------------------------------/
 
 **********************************************************************
-* UTILS
-**********************************************************************
-
-CLASS lcl_mustache_utils DEFINITION FINAL.
-
-  PUBLIC SECTION.
-
-    CLASS-METHODS split_string
-      IMPORTING iv_text       TYPE string
-                iv_sep        TYPE clike OPTIONAL
-      RETURNING VALUE(rt_tab) TYPE string_table.
-
-    CLASS-METHODS join_strings
-      IMPORTING it_tab         TYPE string_table
-                iv_sep         TYPE clike OPTIONAL
-      RETURNING VALUE(rv_text) TYPE string.
-
-    class-methods CHECK_VERSION_FITS
-      importing
-        !I_REQUIRED_VERSION type STRING
-        !I_CURRENT_VERSION type STRING
-      returning
-        value(R_FITS) type ABAP_BOOL .
-
-ENDCLASS. "lcl_mustache_utils
-
-CLASS lcl_mustache_utils IMPLEMENTATION.
-
-  METHOD split_string.
-
-    IF iv_sep IS NOT INITIAL.
-      SPLIT iv_text AT iv_sep INTO TABLE rt_tab.
-    ELSE.
-      FIND FIRST OCCURRENCE OF cl_abap_char_utilities=>cr_lf IN iv_text.
-      IF sy-subrc = 0.
-        SPLIT iv_text AT cl_abap_char_utilities=>cr_lf INTO TABLE rt_tab.
-      ELSE.
-        SPLIT iv_text AT cl_abap_char_utilities=>newline INTO TABLE rt_tab.
-      ENDIF.
-    ENDIF.
-
-  ENDMETHOD.  " split_string.
-
-  METHOD join_strings.
-
-    DATA lv_sep TYPE string.
-
-    IF iv_sep IS NOT SUPPLIED.
-      lv_sep = cl_abap_char_utilities=>newline.
-    ELSE.
-      lv_sep = iv_sep.
-    ENDIF.
-
-    CONCATENATE LINES OF it_tab INTO rv_text SEPARATED BY lv_sep.
-
-  ENDMETHOD. "join_strings
-
-  method check_version_fits.
-
-    types:
-      begin of ty_version,
-        major type numc4,
-        minor type numc4,
-        patch type numc4,
-      end of ty_version.
-
-    data ls_cur_ver type ty_version.
-    data ls_req_ver type ty_version.
-    data lv_buf type string.
-
-    lv_buf = i_current_version.
-    shift lv_buf left deleting leading 'v'.
-    split lv_buf at '.' into ls_cur_ver-major ls_cur_ver-minor ls_cur_ver-patch.
-
-    lv_buf = i_required_version.
-    shift lv_buf left deleting leading 'v'.
-    split lv_buf at '.' into ls_req_ver-major ls_req_ver-minor ls_req_ver-patch.
-
-    if ls_req_ver-major <= ls_cur_ver-major.
-      if ls_req_ver-minor <= ls_cur_ver-minor.
-        if ls_req_ver-patch <= ls_cur_ver-patch.
-          r_fits = abap_true.
-        endif.
-      endif.
-    endif.
-
-  endmethod.
-
-ENDCLASS. "lcl_mustache_utils
-
-**********************************************************************
 * MUSTACHE LOGIC
 **********************************************************************
 
@@ -244,10 +153,10 @@ CLASS lcl_mustache_parser IMPLEMENTATION.
 
     IF lines( it_template ) > 0.
       LOOP AT it_template ASSIGNING <line>.
-        APPEND LINES OF lcl_mustache_utils=>split_string( <line> ) TO lt_strings.
+        APPEND LINES OF zcl_mustache_utils=>split_string( <line> ) TO lt_strings.
       ENDLOOP.
     ELSE. " iv_template, which can also be empty then
-      lt_strings = lcl_mustache_utils=>split_string( iv_template ).
+      lt_strings = zcl_mustache_utils=>split_string( iv_template ).
     ENDIF.
 
     ls_newline_token-type    = zif_mustache=>c_token_type-static.
@@ -969,7 +878,7 @@ CLASS lcl_mustache IMPLEMENTATION.
 
   METHOD render_tt.
 
-    rt_tab = lcl_mustache_utils=>split_string(
+    rt_tab = zcl_mustache_utils=>split_string(
       iv_sep  = cl_abap_char_utilities=>newline
       iv_text = render( i_data ) ).
 
@@ -991,7 +900,7 @@ CLASS lcl_mustache IMPLEMENTATION.
       CHANGING
         ct_lines = lt_temp ).
 
-    rv_text = lcl_mustache_utils=>join_strings( it_tab = lt_temp iv_sep = '' ).
+    rv_text = zcl_mustache_utils=>join_strings( it_tab = lt_temp iv_sep = '' ).
 
   ENDMETHOD.  " render.
 
@@ -1028,7 +937,7 @@ CLASS lcl_mustache IMPLEMENTATION.
 
   method CHECK_VERSION_FITS.
 
-    r_fits = lcl_mustache_utils=>check_version_fits(
+    r_fits = zcl_mustache_utils=>check_version_fits(
       i_current_version  = zif_mustache=>version
       i_required_version = i_required_version ).
 

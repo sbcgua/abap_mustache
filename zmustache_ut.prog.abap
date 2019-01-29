@@ -73,96 +73,6 @@ ENDCLASS.
 
 
 *----------------------------------------------------------------------*
-*       CLASS ltcl_mustache_utils
-*----------------------------------------------------------------------*
-
-CLASS ltcl_mustache_utils DEFINITION FINAL
-  FOR TESTING RISK LEVEL HARMLESS DURATION SHORT.
-
-  PRIVATE SECTION.
-    METHODS split_string FOR TESTING.
-    METHODS join_strings FOR TESTING.
-    methods check_version_fits for testing.
-
-ENDCLASS. "ltcl_mustache_utils
-
-CLASS ltcl_mustache_utils IMPLEMENTATION.
-
-  METHOD split_string.
-
-    DATA: lt_exp TYPE string_table.
-
-    APPEND 'ABC' TO lt_exp.
-    APPEND '123' TO lt_exp.
-
-    cl_abap_unit_assert=>assert_equals(
-      act = lcl_mustache_utils=>split_string(
-      'ABC' && cl_abap_char_utilities=>cr_lf && '123' )
-      exp = lt_exp ).
-
-    cl_abap_unit_assert=>assert_equals(
-      act = lcl_mustache_utils=>split_string(
-      'ABC' && cl_abap_char_utilities=>newline && '123' )
-      exp = lt_exp ).
-
-    cl_abap_unit_assert=>assert_equals(
-      act = lcl_mustache_utils=>split_string(
-      iv_text = 'ABC' && 'X' && '123' iv_sep = 'X' )
-      exp = lt_exp ).
-
-  ENDMETHOD.  " split_string.
-
-  METHOD join_strings.
-
-    DATA: lt_src TYPE string_table.
-
-    APPEND 'ABC' TO lt_src.
-    APPEND '123' TO lt_src.
-
-    cl_abap_unit_assert=>assert_equals(
-      act = lcl_mustache_utils=>join_strings( lt_src )
-      exp = 'ABC' && cl_abap_char_utilities=>newline && '123' ).
-
-    cl_abap_unit_assert=>assert_equals(
-      act = lcl_mustache_utils=>join_strings( it_tab = lt_src iv_sep = 'X' )
-      exp = 'ABC' && 'X' && '123' ).
-
-  ENDMETHOD. "join_strings
-
-  method check_version_fits.
-    cl_abap_unit_assert=>assert_true(
-      zcl_text2tab_utils=>check_version_fits(
-        i_current_version = 'v2.2.2'
-        i_required_version = 'v2.2.2' ) ).
-    cl_abap_unit_assert=>assert_true(
-      zcl_text2tab_utils=>check_version_fits(
-        i_current_version = 'v2.2.2'
-        i_required_version = 'v2.1.2' ) ).
-    cl_abap_unit_assert=>assert_true(
-      zcl_text2tab_utils=>check_version_fits(
-        i_current_version = 'v2.2.2'
-        i_required_version = 'v1.0.0' ) ).
-    cl_abap_unit_assert=>assert_false(
-      zcl_text2tab_utils=>check_version_fits(
-        i_current_version = 'v2.2.2'
-        i_required_version = 'v2.2.3' ) ).
-    cl_abap_unit_assert=>assert_false(
-      zcl_text2tab_utils=>check_version_fits(
-        i_current_version = 'v2.2.2'
-        i_required_version = 'v2.2.30' ) ).
-    cl_abap_unit_assert=>assert_false(
-      zcl_text2tab_utils=>check_version_fits(
-        i_current_version = 'v2.2.2'
-        i_required_version = 'v2.3.1' ) ).
-    cl_abap_unit_assert=>assert_false(
-      zcl_text2tab_utils=>check_version_fits(
-        i_current_version = 'v2.2.2'
-        i_required_version = 'v3.0.0' ) ).
-  endmethod.
-
-ENDCLASS. "ltcl_mustache_utils
-
-*----------------------------------------------------------------------*
 *       CLASS ltcl_mustache
 *----------------------------------------------------------------------*
 CLASS ltcl_mustache DEFINITION FINAL
@@ -177,7 +87,7 @@ CLASS ltcl_mustache DEFINITION FINAL
         pm   TYPE abap_bool,
         html TYPE string,
         tab  TYPE string_table,
-        obj  TYPE REF TO lcl_mustache_utils,
+        obj  TYPE REF TO zcl_mustache_utils,
       END OF ty_dummy,
 
       BEGIN OF ty_size,
@@ -979,7 +889,7 @@ CLASS ltcl_mustache_render IMPLEMENTATION.
             CHANGING
               ct_lines   = lt_act ).
         ENDIF.
-        lv_act = lcl_mustache_utils=>join_strings( it_tab = lt_act iv_sep = '' ).
+        lv_act = zcl_mustache_utils=>join_strings( it_tab = lt_act iv_sep = '' ).
 
 
         cl_abap_unit_assert=>assert_equals(
