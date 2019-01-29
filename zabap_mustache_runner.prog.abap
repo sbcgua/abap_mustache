@@ -8,7 +8,6 @@ report zabap_mustache_runner.
 **********************************************************************
 
 include zmustache.
-include zmustache_ut.
 include zmustache_perf_test.
 
 **********************************************************************
