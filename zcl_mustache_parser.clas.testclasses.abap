@@ -159,6 +159,14 @@ class ltcl_mustache_parser implementation.
 
     cl_abap_unit_assert=>assert_equals( exp = lt_exp act = lt_act ).
 
+    " Path
+    append initial line to lt_exp assigning <token>.
+    <token>-type    = zif_mustache=>c_token_type-etag.
+    <token>-content = 'A/B'.
+    append 'A' to <token>-path.
+    append 'B' to <token>-path.
+    cl_abap_unit_assert=>assert_equals( exp = <token> act = zcl_mustache_parser=>parse_tag( 'A/B' ) ).
+
   endmethod. "parse_tag
 
   method parse_tag_negative.

@@ -132,7 +132,7 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
     describe field <field> type lv_type.
 
     if lv_type ca c_data_type-elem. " Element data type
-      rv_val = <field>.
+      rv_val = |{ <field> }|.
     elseif lv_type ca c_data_type-oref. " Object or interface instance
       rv_val = render_oref( iv_tag_name = iv_name io_obj = <field> ).
     else.
@@ -156,6 +156,7 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
 
     field-symbols: <field> type any,
                    <struc> type any,
+                   <fname> type string,
                    <rec>   type zif_mustache=>ty_struc,
                    <table> type any table.
 
@@ -395,8 +396,7 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
     describe field i_data type lv_type.
 
     if lv_type ca c_data_type-table
-       and cl_abap_typedescr=>describe_by_data( i_data )->absolute_name
-           = c_ty_struc_tt_absolute_name.
+       and cl_abap_typedescr=>describe_by_data( i_data )->absolute_name = c_ty_struc_tt_absolute_name.
       lv_unitab = abap_true.
     endif.
 

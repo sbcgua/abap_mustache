@@ -1,3 +1,11 @@
+define _add_mu_token.
+  append initial line to &1 assigning <token>.
+  <token>-type    = &2.
+  <token>-cond    = &3.
+  <token>-level   = &4.
+  <token>-content = &5.
+end-of-definition.
+
 class ltcl_mustache_render definition final
   for testing
   risk level
@@ -7,6 +15,7 @@ class ltcl_mustache_render definition final
 
     methods find_value     for testing.
     methods render_section for testing.
+    methods render_path for testing.
 
 endclass.
 
@@ -65,6 +74,21 @@ class ltcl_mustache_render implementation.
       catch zcx_mustache_error into lx.
         cl_abap_unit_assert=>fail( lx->msg ).
     endtry.
+
+    "4----------------
+    data ls_struc type zcl_mustache_test=>ty_dummy.
+    ls_struc-attr-age = 10.
+    clear lt_data_stack.
+    get reference of ls_struc into lr.
+    append lr to lt_data_stack.
+
+    try .
+        lv_act = zcl_mustache_render=>find_value( it_data_stack = lt_data_stack iv_name = 'attr-age' ).
+        cl_abap_unit_assert=>assert_equals( exp = '10' act = lv_act ).
+      catch zcx_mustache_error into lx.
+        cl_abap_unit_assert=>fail( lx->msg ).
+    endtry.
+
 
   endmethod.  " find_value.
 
@@ -128,5 +152,69 @@ class ltcl_mustache_render implementation.
     enddo.
 
   endmethod. "render_section
+
+  method render_path.
+
+    data ls_test type zcl_mustache_test=>ty_test_case.
+    data ls_statics type zcl_mustache_render=>ty_context.
+    data ls_data type zcl_mustache_test=>ty_dummy.
+    data lt_act type string_table.
+    data lv_act type string.
+    data lx type ref to zcx_mustache_error.
+    field-symbols <token> like line of ls_test-tokens.
+
+    ls_data-name = 'Vasya'.
+    ls_data-attr-male = abap_true.
+    ls_data-attr-age = 30.
+
+    ls_test-template = '{{name}}: age {{attr-age}}'.
+    _add_mu_token ls_statics-tokens zif_mustache=>c_token_type-etag        ''  1   'name'.
+    _add_mu_token ls_statics-tokens zif_mustache=>c_token_type-static      ''  1   `: age `.
+    _add_mu_token ls_statics-tokens zif_mustache=>c_token_type-etag        ''  1   'attr-age'.
+    ls_test-output = 'Vasya: age 30'.
+
+    try .
+      zcl_mustache_render=>render_section(
+        exporting
+          is_statics = ls_statics
+          i_data     = ls_data
+        changing
+          ct_lines   = lt_act ).
+      lv_act = zcl_mustache_utils=>join_strings( it_tab = lt_act iv_sep = '' ).
+
+      cl_abap_unit_assert=>assert_equals(
+        exp = ls_test-output
+        act = lv_act ).
+    catch zcx_mustache_error into lx.
+      cl_abap_unit_assert=>fail( lx->msg ).
+    endtry.
+
+    clear: ls_statics-tokens, lt_act.
+    ls_test-template = '{{name}}: {{#attr-male}}Male{{/attr-male}}{{#attr-female}}Female{{/attr-female}}'.
+    _add_mu_token ls_statics-tokens zif_mustache=>c_token_type-etag        ''  1   'name'.
+    _add_mu_token ls_statics-tokens zif_mustache=>c_token_type-static      ''  1   `: `.
+    _add_mu_token ls_statics-tokens zif_mustache=>c_token_type-section     '=' 1   'attr-male'.
+    _add_mu_token ls_statics-tokens zif_mustache=>c_token_type-static      ''  2   `Male`.
+    _add_mu_token ls_statics-tokens zif_mustache=>c_token_type-section     '=' 1   'attr-female'.
+    _add_mu_token ls_statics-tokens zif_mustache=>c_token_type-static      ''  2   `Female`.
+    ls_test-output = 'Vasya: Male'.
+
+    try .
+      zcl_mustache_render=>render_section(
+        exporting
+          is_statics = ls_statics
+          i_data     = ls_data
+        changing
+          ct_lines   = lt_act ).
+      lv_act = zcl_mustache_utils=>join_strings( it_tab = lt_act iv_sep = '' ).
+
+      cl_abap_unit_assert=>assert_equals(
+        exp = ls_test-output
+        act = lv_act ).
+    catch zcx_mustache_error into lx.
+      cl_abap_unit_assert=>fail( lx->msg ).
+    endtry.
+
+  endmethod.
 
 endclass.

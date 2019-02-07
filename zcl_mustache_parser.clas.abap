@@ -185,6 +185,13 @@ CLASS ZCL_MUSTACHE_PARSER IMPLEMENTATION.
 
     rv_token-content = lv_param.
 
+    if ( rv_token-type = zif_mustache=>c_token_type-etag
+      or rv_token-type = zif_mustache=>c_token_type-utag
+      or rv_token-type = zif_mustache=>c_token_type-section )
+      and find( val = rv_token-content sub = '/' ) >= 1. " / at the beginning mean namespace
+      split rv_token-content at '/' into table rv_token-path.
+    endif.
+
   endmethod.  " parse_tag.
 
 

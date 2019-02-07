@@ -14,6 +14,7 @@ interface zif_mustache
       cond    type char2,
       level   type i,
       content type string,
+      path    type string_table,
     end of ty_token,
     ty_token_tt type standard table of ty_token with key type cond level.
 

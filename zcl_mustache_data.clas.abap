@@ -5,6 +5,12 @@ class ZCL_MUSTACHE_DATA definition
 
 public section.
 
+  class-methods CREATE_FOR
+    importing
+      !IV_NAME type STRING
+      !IV_VAL type ANY
+    returning
+      value(RO_DATA) type ref to ZCL_MUSTACHE_DATA .
   class-methods GET_FOR
     importing
       !IV_NAME type STRING
@@ -59,6 +65,12 @@ CLASS ZCL_MUSTACHE_DATA IMPLEMENTATION.
 
     append ls_data to mt_data.
 
+  endmethod.
+
+
+  method create_for.
+    create object ro_data.
+    ro_data->add( iv_name = iv_name iv_val = iv_val ).
   endmethod.
 
 

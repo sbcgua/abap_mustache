@@ -16,6 +16,11 @@ class zcl_mustache_test definition
         html type string,
         tab  type string_table,
         obj  type ref to zcl_mustache_utils,
+        begin of attr,
+          age    type i,
+          male   type abap_bool,
+          female type abap_bool,
+        end of attr,
       end of ty_dummy,
 
       begin of ty_size,
