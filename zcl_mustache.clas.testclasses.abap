@@ -69,14 +69,15 @@ class ltcl_mustache definition final
 
   private section.
 
-
     methods render_negative         for testing.
     methods render_w_partials       for testing.
     methods render_tt               for testing.
     methods add_partial             for testing.
     methods render_with_data_builder for testing.
     methods render_with_object      for testing.
-    methods render_oref_negative for testing.
+    methods render_oref_negative    for testing.
+
+    methods skip_empty_lines for testing.
 
 endclass.
 
@@ -376,6 +377,59 @@ class ltcl_mustache implementation.
           act = lx->rc ).
     endtry.
     cl_abap_unit_assert=>assert_not_initial( lx ).
+
+  endmethod.
+
+  method skip_empty_lines.
+
+    data:
+          lo_mustache type ref to zcl_mustache,
+          lo_data     type ref to zcl_mustache_data,
+          lt_tmp      type string_table,
+          lt_exp      type string_table,
+          lt_act      type string_table,
+          lx          type ref to zcx_mustache_error.
+
+    " Full test
+    create object lo_data.
+    lo_data->add( iv_name = 'A' iv_val = 'X' ).
+    lo_data->add( iv_name = 'B' iv_val = 'X' ).
+
+    append 'begin' to lt_tmp.
+    append '  {{#a}}it has A{{/a}}' to lt_tmp.
+    append '  {{#b}}it has B{{/b}}' to lt_tmp.
+    append 'end' to lt_tmp.
+
+    append 'begin' to lt_exp.
+    append '  it has A' to lt_exp.
+    append '  it has B' to lt_exp.
+    append 'end' to lt_exp.
+
+    try.
+      lo_mustache = zcl_mustache=>create( zcl_mustache_utils=>join_strings( lt_tmp ) ).
+      lt_act = lo_mustache->render_tt( lo_data ).
+      cl_abap_unit_assert=>assert_equals( exp = lt_exp act = lt_act ).
+    catch zcx_mustache_error into lx.
+      cl_abap_unit_assert=>fail( lx->msg ).
+    endtry.
+
+    " Skip test
+    create object lo_data.
+    lo_data->add( iv_name = 'A' iv_val = 'X' ).
+    lo_data->add( iv_name = 'B' iv_val = '' ).
+
+    clear lt_exp.
+    append 'begin' to lt_exp.
+    append '  it has A' to lt_exp.
+    append 'end' to lt_exp.
+
+    try.
+      lo_mustache = zcl_mustache=>create( zcl_mustache_utils=>join_strings( lt_tmp ) ).
+      lt_act = lo_mustache->render_tt( lo_data ).
+      cl_abap_unit_assert=>assert_equals( exp = lt_exp act = lt_act ).
+    catch zcx_mustache_error into lx.
+      cl_abap_unit_assert=>fail( lx->msg ).
+    endtry.
 
   endmethod.
 

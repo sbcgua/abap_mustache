@@ -239,6 +239,10 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
           ls_statics type ty_context,
           lv_level   type i,
           lv_idx     type i,
+          lt_buf     type string_table,
+          lv_has_words        type abap_bool,
+          lv_has_tags         type abap_bool,
+          lv_last_content_idx type i,
           lv_val     type string.
 
     field-symbols: <field>   type any,
@@ -262,16 +266,33 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
         continue.
       endif.
 
+      if <token>-type <> zif_mustache=>c_token_type-static.
+        lv_has_tags = abap_true.
+      endif.
+
       case <token>-type.
         when zif_mustache=>c_token_type-static.                     " Static particle
-          append <token>-content to ct_lines.
+          if <token>-content = cl_abap_char_utilities=>newline.
+            if lv_has_words = abap_true or lv_has_tags = abap_false or lv_last_content_idx < lines( lt_buf ).
+              " has non-space statics or did not have tags (so empty line is intended) or some tags rendered
+              append lines of lt_buf to ct_lines.
+              append <token>-content to ct_lines.
+            endif.
+            clear: lt_buf, lv_has_words, lv_has_tags, lv_last_content_idx.
+          else.
+            append <token>-content to lt_buf.
+            lv_last_content_idx = lines( lt_buf ).
+            if lv_has_words = abap_false and <token>-content cn ` `.
+              lv_has_words = abap_true.
+            endif.
+          endif.
 
         when zif_mustache=>c_token_type-etag or zif_mustache=>c_token_type-utag.  " Single tag
           lv_val  = find_value( iv_name = <token>-content  it_data_stack = it_data_stack ).
           if <token>-type = zif_mustache=>c_token_type-etag and is_statics-x_format is not initial.
             lv_val = escape( val = lv_val format = is_statics-x_format ).
           endif.
-          append lv_val to ct_lines.
+          append lv_val to lt_buf.
 
         when zif_mustache=>c_token_type-section.
           lr = find_walker( iv_name       = <token>-content
@@ -288,7 +309,7 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
                 i_data        = <field>
                 iv_path       = iv_path && <token>-content && '/'
               changing
-                ct_lines      = ct_lines ).
+                ct_lines      = lt_buf ).
           endif.
 
         when zif_mustache=>c_token_type-partial.
@@ -317,13 +338,15 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
               iv_start_idx  = 1 " Start from start
               iv_path       = iv_path && '>' && <token>-content && '/'
             changing
-              ct_lines      = ct_lines ).
+              ct_lines      = lt_buf ).
 
         when others.
           assert 0 = 1. " Cannot reach, programming error
       endcase.
 
     endloop.
+
+    append lines of lt_buf to ct_lines.
 
   endmethod.  " render_loop.
 
@@ -390,26 +413,40 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
           lv_unitab     type abap_bool,
           lt_data_stack like it_data_stack.
 
-    field-symbols: <table>   type any table,
-                   <tabline> type any.
-
     describe field i_data type lv_type.
 
     if lv_type ca c_data_type-table
-       and cl_abap_typedescr=>describe_by_data( i_data )->absolute_name = c_ty_struc_tt_absolute_name.
+      and cl_abap_typedescr=>describe_by_data( i_data )->absolute_name = c_ty_struc_tt_absolute_name.
+      lv_unitab = abap_true.
+    elseif lv_type = cl_abap_typedescr=>typekind_oref.
+      data lo_data type ref to zcl_mustache_data.
+      data ls_data_struc type zif_mustache=>ty_struc_tt.
+
+      try .
+        lo_data ?= i_data.
+      catch cx_sy_move_cast_error ##NO_HANDLER.
+        zcx_mustache_error=>raise(
+          msg = |Cannot render section { iv_path }, wrong data item type|
+          rc  = 'CRWD' ).
+      endtry.
+
+      ls_data_struc = lo_data->get( ).
+      get reference of ls_data_struc into lr.
       lv_unitab = abap_true.
     endif.
 
-    " Input is a structure - one time render
     if lv_type ca c_data_type-struc
        or lv_type ca c_data_type-elem
        or lv_unitab = abap_true.
 
       " Update context
       lt_data_stack = it_data_stack.
-      get reference of i_data into lr.
+      if lr is initial. " Not assigned above
+        get reference of i_data into lr.
+      endif.
       append lr to lt_data_stack.
 
+      " Input is a structure - one time render
       render_loop(
         exporting
           is_statics    = is_statics
@@ -419,9 +456,11 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
         changing
           ct_lines      = ct_lines ).
 
-      " Input is a table - iterate
     elseif lv_type ca c_data_type-table.
 
+      " Input is a table - iterate
+      field-symbols <table>   type any table.
+      field-symbols <tabline> type any.
       assign i_data to <table>.
       loop at <table> assigning <tabline>.
         render_section(
