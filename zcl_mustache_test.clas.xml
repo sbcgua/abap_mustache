@@ -4,7 +4,6 @@
   <asx:values>
    <VSEOCLASS>
     <CLSNAME>ZCL_MUSTACHE_TEST</CLSNAME>
-    <VERSION>1</VERSION>
     <LANGU>E</LANGU>
     <DESCRIPT>Mustache common test objects</DESCRIPT>
     <CATEGORY>05</CATEGORY>
