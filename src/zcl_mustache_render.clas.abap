@@ -30,9 +30,6 @@ class zcl_mustache_render definition
         !it_data_stack type zif_mustache=>ty_ref_tt optional
         !iv_start_idx type i default 1
         !iv_path type string default '/'
-        !iv_cond type zif_mustache=>ty_token-cond
-        !iv_first type abap_bool optional
-        !iv_last type abap_bool optional
       changing
         !ct_lines type string_table
       raising
@@ -43,8 +40,6 @@ class zcl_mustache_render definition
         !it_data_stack type zif_mustache=>ty_ref_tt
         !iv_start_idx type i
         !iv_path type string
-        !iv_first type abap_bool optional
-        !iv_last type abap_bool optional
       changing
         !ct_lines type string_table
       raising
@@ -136,7 +131,6 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
     DATA(t) = cl_abap_datadescr=>describe_by_data_ref( lr ).
     assign lr->* to <field>.
     lv_type = cl_abap_datadescr=>get_data_type_kind( <field> ).
-    "describe field <field> type lv_type.
 
     if lv_type ca c_data_type-elem. " Element data type
       rv_val = |{ <field> }|.
@@ -172,7 +166,6 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
     read table it_data_stack into lr index iv_level.
     assign lr->* to <field>.
     lv_type = cl_abap_datadescr=>get_data_type_kind( <field> ).
-    "describe field <field> type lv_type.
     unassign <field>.
 
     if lv_type ca c_data_type-elem. " Element data type.
@@ -303,16 +296,10 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
           append lv_val to lt_buf.
 
         when zif_mustache=>c_token_type-section.
-          if <token>-content = '@first'.
-            assign iv_first to <field>.
-          elseif <token>-content = '@last'.
-            assign iv_last to <field>.
-          else.
-            lr = find_walker( iv_name       = <token>-content
-                              it_data_stack = it_data_stack
-                              iv_level      = lines( it_data_stack ) ). " Start from deepest level
-            assign lr->* to <field>.
-          endif.
+          lr = find_walker( iv_name       = <token>-content
+                            it_data_stack = it_data_stack
+                            iv_level      = lines( it_data_stack ) ). " Start from deepest level
+          assign lr->* to <field>.
 
           if abap_true = eval_condition( iv_var = <field> iv_cond = <token>-cond ).
             render_section(
@@ -322,7 +309,6 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
                 iv_start_idx  = lv_idx + 1
                 i_data        = <field>
                 iv_path       = iv_path && <token>-content && '/'
-                iv_cond       = <token>-cond
               changing
                 ct_lines      = lt_buf ).
           endif.
@@ -429,7 +415,6 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
           lt_data_stack like it_data_stack.
 
     lv_type = cl_abap_datadescr=>get_data_type_kind( i_data ).
-    "describe field i_data type lv_type.
 
     if lv_type ca c_data_type-table
       and cl_abap_typedescr=>describe_by_data( i_data )->absolute_name = c_ty_struc_tt_absolute_name.
@@ -453,7 +438,7 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
 
     if lv_type ca c_data_type-struc
        or lv_type ca c_data_type-elem
-       or lv_unitab = abap_true or iv_cond = zif_mustache=>c_section_condition-ifnot.
+       or lv_unitab = abap_true.
 
       " Update context
       lt_data_stack = it_data_stack.
@@ -469,8 +454,6 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
           it_data_stack = lt_data_stack
           iv_start_idx  = iv_start_idx
           iv_path       = iv_path
-          iv_first      = iv_first
-          iv_last       = iv_last
         changing
           ct_lines      = ct_lines ).
 
@@ -488,9 +471,6 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
             iv_start_idx  = iv_start_idx
             i_data        = <tabline>
             iv_path       = iv_path
-            iv_cond       = iv_cond
-            iv_first      = xsdbool( sy-tabix = 1 )
-            iv_last       = xsdbool( sy-tabix = lines( <table> ) )
         changing
           ct_lines        = ct_lines ).
       endloop.
