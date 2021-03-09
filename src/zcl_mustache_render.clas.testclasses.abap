@@ -1,11 +1,3 @@
-define _add_mu_token.
-  append initial line to &1 assigning <token>.
-  <token>-type    = &2.
-  <token>-cond    = &3.
-  <token>-level   = &4.
-  <token>-content = &5.
-end-of-definition.
-
 class ltcl_mustache_render definition final
   for testing
   risk level
@@ -67,7 +59,7 @@ class ltcl_mustache_render implementation.
     append lr to lt_data_stack.
 
     try .
-        lv_act = zcl_mustache_render=>find_value( it_data_stack = lt_data_stack iv_name = 'Abc' ).
+        lv_act = zcl_mustache_render=>find_value( it_data_stack = lt_data_stack iv_name = 'Abc').
         cl_abap_unit_assert=>assert_equals( exp = '123' act = lv_act ).
         lv_act = zcl_mustache_render=>find_value( it_data_stack = lt_data_stack iv_name = 'name' ).
         cl_abap_unit_assert=>assert_equals( exp = 'abc' act = lv_act ).
@@ -89,7 +81,6 @@ class ltcl_mustache_render implementation.
         cl_abap_unit_assert=>fail( lx->msg ).
     endtry.
 
-
   endmethod.  " find_value.
 
   method render_section.
@@ -97,10 +88,10 @@ class ltcl_mustache_render implementation.
     data:
           ls_statics      type zcl_mustache_render=>ty_context,
           ls_simple       type zcl_mustache_test=>ty_dummy,
-          lt_complex      type zif_mustache=>ty_struc_tt,
+          lt_complex     type zif_mustache=>ty_struc_tt,
           lv_count        type i,
           lv_idx          type i,
-          iv_complex_test type abap_bool,
+          iv_complex_test type c,
           lv_exp          type string,
           lv_act          type string,
           lt_act          type string_table,
@@ -168,9 +159,11 @@ class ltcl_mustache_render implementation.
     ls_data-attr-age = 30.
 
     ls_test-template = '{{name}}: age {{attr-age}}'.
-    _add_mu_token ls_statics-tokens zif_mustache=>c_token_type-etag        ''  1   'name'.
-    _add_mu_token ls_statics-tokens zif_mustache=>c_token_type-static      ''  1   `: age `.
-    _add_mu_token ls_statics-tokens zif_mustache=>c_token_type-etag        ''  1   'attr-age'.
+    ls_statics-tokens = VALUE #(
+      ( type = zif_mustache=>c_token_type-etag level = 1 content = `name` )
+      ( type = zif_mustache=>c_token_type-static level = 1 content = `: age ` )
+      ( type = zif_mustache=>c_token_type-etag level = 1 content = `attr-age` )
+    ).
     ls_test-output = 'Vasya: age 30'.
 
     try .
@@ -191,12 +184,14 @@ class ltcl_mustache_render implementation.
 
     clear: ls_statics-tokens, lt_act.
     ls_test-template = '{{name}}: {{#attr-male}}Male{{/attr-male}}{{#attr-female}}Female{{/attr-female}}'.
-    _add_mu_token ls_statics-tokens zif_mustache=>c_token_type-etag        ''  1   'name'.
-    _add_mu_token ls_statics-tokens zif_mustache=>c_token_type-static      ''  1   `: `.
-    _add_mu_token ls_statics-tokens zif_mustache=>c_token_type-section     '=' 1   'attr-male'.
-    _add_mu_token ls_statics-tokens zif_mustache=>c_token_type-static      ''  2   `Male`.
-    _add_mu_token ls_statics-tokens zif_mustache=>c_token_type-section     '=' 1   'attr-female'.
-    _add_mu_token ls_statics-tokens zif_mustache=>c_token_type-static      ''  2   `Female`.
+    ls_statics-tokens = VALUE #(
+      ( type = zif_mustache=>c_token_type-etag level = 1 content = `name` )
+      ( type = zif_mustache=>c_token_type-static level = 1 content = `: ` )
+      ( type = zif_mustache=>c_token_type-section cond = '=' level = 1 content = `attr-male` )
+      ( type = zif_mustache=>c_token_type-static level = 2 content = `Male` )
+      ( type = zif_mustache=>c_token_type-section cond = '=' level = 1 content = `attr-female` )
+      ( type = zif_mustache=>c_token_type-static level = 2 content = `Female` )
+    ).
     ls_test-output = 'Vasya: Male'.
 
     try .
