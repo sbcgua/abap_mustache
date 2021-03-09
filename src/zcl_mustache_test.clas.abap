@@ -86,9 +86,9 @@ CLASS ZCL_MUSTACHE_TEST IMPLEMENTATION.
     append initial line to gt_test_case_stash assigning <t>.
     <t>-template = 'Hello {{name}}!'.
     <t>-tokens = VALUE #(
-      ( type = zif_mustache=>c_token_type-static cond = '' level = 1 content = `Hello ` )
-      ( type = zif_mustache=>c_token_type-etag cond = '' level = 1 content = `name` )
-      ( type = zif_mustache=>c_token_type-static cond = '' level = 1 content = `!` )
+      ( type = zif_mustache=>c_token_type-static level = 1 content = `Hello ` )
+      ( type = zif_mustache=>c_token_type-etag level = 1 content = `name` )
+      ( type = zif_mustache=>c_token_type-static level = 1 content = `!` )
     ).
     <t>-output = 'Hello Anonymous network user!'.
 
@@ -96,8 +96,8 @@ CLASS ZCL_MUSTACHE_TEST IMPLEMENTATION.
     append initial line to gt_test_case_stash assigning <t>.
     <t>-template = 'Hello {{name}}'.
     <t>-tokens = VALUE #(
-      ( type = zif_mustache=>c_token_type-static cond = '' level = 1 content = `Hello ` )
-      ( type = zif_mustache=>c_token_type-etag cond = '' level = 1 content = `name` )
+      ( type = zif_mustache=>c_token_type-static level = 1 content = `Hello ` )
+      ( type = zif_mustache=>c_token_type-etag level = 1 content = `name` )
     ).
     <t>-output = 'Hello Anonymous network user'.
 
@@ -105,8 +105,8 @@ CLASS ZCL_MUSTACHE_TEST IMPLEMENTATION.
     append initial line to gt_test_case_stash assigning <t>.
     <t>-template = '{{name}} Hello'.
     <t>-tokens = VALUE #(
-      ( type = zif_mustache=>c_token_type-etag cond = '' level = 1 content = `name` )
-      ( type = zif_mustache=>c_token_type-static cond = '' level = 1 content = ` Hello` )
+      ( type = zif_mustache=>c_token_type-etag level = 1 content = `name` )
+      ( type = zif_mustache=>c_token_type-static level = 1 content = ` Hello` )
     ).
     <t>-output = 'Anonymous network user Hello'.
 
@@ -114,13 +114,13 @@ CLASS ZCL_MUSTACHE_TEST IMPLEMENTATION.
     append initial line to gt_test_case_stash assigning <t>.
     <t>-template = 'Good {{#pm}}afternoon{{/pm}}{{^pm}}morning{{/pm}}, {{name}}'.
     <t>-tokens = VALUE #(
-      ( type = zif_mustache=>c_token_type-static cond = '' level = 1 content = `Good ` )
-      ( type = zif_mustache=>c_token_type-section cond = '=' level = 1 content = `pm` )
-      ( type = zif_mustache=>c_token_type-static cond = '' level = 2 content = `afternoon` )
-      ( type = zif_mustache=>c_token_type-section cond = '!' level = 1 content = `pm` )
-      ( type = zif_mustache=>c_token_type-static cond = '' level = 2 content = `morning` )
-      ( type = zif_mustache=>c_token_type-static cond = '' level = 1 content = `, ` )
-      ( type = zif_mustache=>c_token_type-etag cond = '' level = 1 content = `name` )
+      ( type = zif_mustache=>c_token_type-static level = 1 content = `Good ` )
+      ( type = zif_mustache=>c_token_type-section cond = zif_mustache=>c_section_condition-if level = 1 content = `pm` )
+      ( type = zif_mustache=>c_token_type-static level = 2 content = `afternoon` )
+      ( type = zif_mustache=>c_token_type-section cond = zif_mustache=>c_section_condition-ifnot level = 1 content = `pm` )
+      ( type = zif_mustache=>c_token_type-static level = 2 content = `morning` )
+      ( type = zif_mustache=>c_token_type-static level = 1 content = `, ` )
+      ( type = zif_mustache=>c_token_type-etag level = 1 content = `name` )
     ).
     <t>-output = 'Good afternoon, Anonymous network user'.
 
@@ -128,13 +128,13 @@ CLASS ZCL_MUSTACHE_TEST IMPLEMENTATION.
     append initial line to gt_test_case_stash assigning <t>.
     <t>-template = 'Good {{^am}}afternoon{{/am}}{{#am}}morning{{/am}}, {{name}}'.
     <t>-tokens = VALUE #(
-      ( type = zif_mustache=>c_token_type-static cond = '' level = 1 content = `Good ` )
-      ( type = zif_mustache=>c_token_type-section cond = '!' level = 1 content = `am` )
-      ( type = zif_mustache=>c_token_type-static cond = '' level = 2 content = `afternoon` )
-      ( type = zif_mustache=>c_token_type-section cond = '=' level = 1 content = `am` )
-      ( type = zif_mustache=>c_token_type-static cond = '' level = 2 content = `morning` )
-      ( type = zif_mustache=>c_token_type-static cond = '' level = 1 content = `, ` )
-      ( type = zif_mustache=>c_token_type-etag cond = '' level = 1 content = `name` )
+      ( type = zif_mustache=>c_token_type-static level = 1 content = `Good ` )
+      ( type = zif_mustache=>c_token_type-section cond = zif_mustache=>c_section_condition-ifnot level = 1 content = `am` )
+      ( type = zif_mustache=>c_token_type-static level = 2 content = `afternoon` )
+      ( type = zif_mustache=>c_token_type-section cond = zif_mustache=>c_section_condition-if level = 1 content = `am` )
+      ( type = zif_mustache=>c_token_type-static level = 2 content = `morning` )
+      ( type = zif_mustache=>c_token_type-static level = 1 content = `, ` )
+      ( type = zif_mustache=>c_token_type-etag level = 1 content = `name` )
     ).
     <t>-output = 'Good afternoon, Anonymous network user'.
 
@@ -142,11 +142,11 @@ CLASS ZCL_MUSTACHE_TEST IMPLEMENTATION.
     append initial line to gt_test_case_stash assigning <t>.
     <t>-template = '{{!comment}}{{html}} {{{html}}} {{&html}}'.
     <t>-tokens = VALUE #(
-      ( type = zif_mustache=>c_token_type-etag cond = '' level = 1 content = `html` )
-      ( type = zif_mustache=>c_token_type-static cond = '' level = 1 content = ` ` )
-      ( type = zif_mustache=>c_token_type-utag cond = '' level = 1 content = `html` )
-      ( type = zif_mustache=>c_token_type-static cond = '' level = 1 content = ` ` )
-      ( type = zif_mustache=>c_token_type-utag cond = '' level = 1 content = `html` )
+      ( type = zif_mustache=>c_token_type-etag level = 1 content = `html` )
+      ( type = zif_mustache=>c_token_type-static level = 1 content = ` ` )
+      ( type = zif_mustache=>c_token_type-utag level = 1 content = `html` )
+      ( type = zif_mustache=>c_token_type-static level = 1 content = ` ` )
+      ( type = zif_mustache=>c_token_type-utag level = 1 content = `html` )
     ).
     <t>-output = '&lt;tag&gt;&amp; <tag>& <tag>&'.
 
@@ -154,10 +154,10 @@ CLASS ZCL_MUSTACHE_TEST IMPLEMENTATION.
     append initial line to gt_test_case_stash assigning <t>.
     <t>-template = '{{pm}}{{=<* *>=}}<*pm*>{{xx}}<*={{ }}=*>{{pm}}'.
     <t>-tokens = VALUE #(
-      ( type = zif_mustache=>c_token_type-etag cond = '' level = 1 content = `pm` )
-      ( type = zif_mustache=>c_token_type-etag cond = '' level = 1 content = `pm` )
-      ( type = zif_mustache=>c_token_type-static cond = '' level = 1 content = `{{xx}}` )
-      ( type = zif_mustache=>c_token_type-etag cond = '' level = 1 content = `pm` )
+      ( type = zif_mustache=>c_token_type-etag level = 1 content = `pm` )
+      ( type = zif_mustache=>c_token_type-etag level = 1 content = `pm` )
+      ( type = zif_mustache=>c_token_type-static level = 1 content = `{{xx}}` )
+      ( type = zif_mustache=>c_token_type-etag level = 1 content = `pm` )
     ).
     <t>-output = 'XX{{xx}}X'.
 
@@ -171,18 +171,18 @@ CLASS ZCL_MUSTACHE_TEST IMPLEMENTATION.
                    '  sizes: {{#sizes}}{{size}},{{/sizes}}' && "c_nl &&
                    '{{/items}}'.
     <t>-tokens = VALUE #(
-      ( type = zif_mustache=>c_token_type-static cond = '' level = 1 content = `Welcome to ` )
-      ( type = zif_mustache=>c_token_type-etag cond = '' level = 1 content = `shop` )
-      ( type = zif_mustache=>c_token_type-static cond = '' level = 1 content = `Our sales:` )
-      ( type = zif_mustache=>c_token_type-section cond = '=' level = 1 content = `items` )
-      ( type = zif_mustache=>c_token_type-static cond = '' level = 2 content = `* ` )
-      ( type = zif_mustache=>c_token_type-etag cond = '' level = 2 content = `name` )
-      ( type = zif_mustache=>c_token_type-static cond = '' level = 2 content = ` - $` )
-      ( type = zif_mustache=>c_token_type-etag cond = '' level = 2 content = `price` )
-      ( type = zif_mustache=>c_token_type-static cond = '' level = 2 content = `  sizes: ` )
-      ( type = zif_mustache=>c_token_type-section cond = '=' level = 2 content = `sizes` )
-      ( type = zif_mustache=>c_token_type-etag cond = '' level = 3 content = `size` )
-      ( type = zif_mustache=>c_token_type-static cond = '' level = 3 content = `,` )
+      ( type = zif_mustache=>c_token_type-static level = 1 content = `Welcome to ` )
+      ( type = zif_mustache=>c_token_type-etag level = 1 content = `shop` )
+      ( type = zif_mustache=>c_token_type-static level = 1 content = `Our sales:` )
+      ( type = zif_mustache=>c_token_type-section cond = zif_mustache=>c_section_condition-if level = 1 content = `items` )
+      ( type = zif_mustache=>c_token_type-static level = 2 content = `* ` )
+      ( type = zif_mustache=>c_token_type-etag level = 2 content = `name` )
+      ( type = zif_mustache=>c_token_type-static level = 2 content = ` - $` )
+      ( type = zif_mustache=>c_token_type-etag level = 2 content = `price` )
+      ( type = zif_mustache=>c_token_type-static level = 2 content = `  sizes: ` )
+      ( type = zif_mustache=>c_token_type-section cond = zif_mustache=>c_section_condition-if level = 2 content = `sizes` )
+      ( type = zif_mustache=>c_token_type-etag level = 3 content = `size` )
+      ( type = zif_mustache=>c_token_type-static level = 3 content = `,` )
     ).
     <t>-output   = 'Welcome to Shopsky'                     && "c_nl &&
                    'Our sales:'                             && "c_nl &&
@@ -199,14 +199,14 @@ CLASS ZCL_MUSTACHE_TEST IMPLEMENTATION.
                    '* {{name}} - ${{price}}'                && c_nl &&
                    `  {{/items}}  `.
     <t>-tokens = VALUE #(
-      ( type = zif_mustache=>c_token_type-static cond = '' level = 1 content = `Our sales:` )
-      ( type = zif_mustache=>c_token_type-static cond = '' level = 1 content = c_nl )
-      ( type = zif_mustache=>c_token_type-section cond = '=' level = 1 content = `items` )
-      ( type = zif_mustache=>c_token_type-static cond = '' level = 2 content = `* ` )
-      ( type = zif_mustache=>c_token_type-etag cond = '' level = 2 content = `name` )
-      ( type = zif_mustache=>c_token_type-static cond = '' level = 2 content = ` - $` )
-      ( type = zif_mustache=>c_token_type-etag cond = '' level = 2 content = `price` )
-      ( type = zif_mustache=>c_token_type-static cond = '' level = 2 content = c_nl )
+      ( type = zif_mustache=>c_token_type-static level = 1 content = `Our sales:` )
+      ( type = zif_mustache=>c_token_type-static level = 1 content = c_nl )
+      ( type = zif_mustache=>c_token_type-section cond = zif_mustache=>c_section_condition-if level = 1 content = `items` )
+      ( type = zif_mustache=>c_token_type-static level = 2 content = `* ` )
+      ( type = zif_mustache=>c_token_type-etag level = 2 content = `name` )
+      ( type = zif_mustache=>c_token_type-static level = 2 content = ` - $` )
+      ( type = zif_mustache=>c_token_type-etag level = 2 content = `price` )
+      ( type = zif_mustache=>c_token_type-static level = 2 content = c_nl )
     ).
     <t>-output   = 'Our sales:'                             && c_nl &&
                    '* Boots - $99.00'                       && c_nl &&
@@ -216,9 +216,9 @@ CLASS ZCL_MUSTACHE_TEST IMPLEMENTATION.
     append initial line to gt_test_case_stash assigning <t>.
     <t>-template = '{{#tab}}{{@tabline}},{{/tab}}'.
     <t>-tokens = VALUE #(
-      ( type = zif_mustache=>c_token_type-section cond = '=' level = 1 content = `tab` )
-      ( type = zif_mustache=>c_token_type-etag cond = '' level = 2 content = `@tabline` )
-      ( type = zif_mustache=>c_token_type-static cond = '' level = 2 content = `,` )
+      ( type = zif_mustache=>c_token_type-section cond = zif_mustache=>c_section_condition-if level = 1 content = `tab` )
+      ( type = zif_mustache=>c_token_type-etag level = 2 content = `@tabline` )
+      ( type = zif_mustache=>c_token_type-static level = 2 content = `,` )
     ).
     <t>-output = 'line1,line2,'.
 
