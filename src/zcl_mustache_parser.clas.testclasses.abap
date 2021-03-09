@@ -104,15 +104,6 @@ class ltcl_mustache_parser implementation.
       ( type = zif_mustache=>c_token_type-static cond = '' level = 2 content = c_nl )
     ).
 
-*    _add_mu_token lt_exp zif_mustache=>c_token_type-static      ''  1   `Our sales:`.
-*    _add_mu_token lt_exp zif_mustache=>c_token_type-static      ''  1   c_nl.
-*    _add_mu_token lt_exp zif_mustache=>c_token_type-section     '=' 1   'items'.
-*    _add_mu_token lt_exp zif_mustache=>c_token_type-static      ''  2   `* `.
-*    _add_mu_token lt_exp zif_mustache=>c_token_type-etag        ''  2   'name'.
-*    _add_mu_token lt_exp zif_mustache=>c_token_type-static      ''  2   ` - $`.
-*    _add_mu_token lt_exp zif_mustache=>c_token_type-etag        ''  2   'price'.
-*    _add_mu_token lt_exp zif_mustache=>c_token_type-static      ''  2   c_nl.
-
     try.
         lt_act = zcl_mustache_parser=>parse_template( it_template = lt_template ).
       catch zcx_mustache_error into lx.
