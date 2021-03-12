@@ -128,8 +128,9 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
                       it_data_stack = it_data_stack
                       iv_level      = lines( it_data_stack ) ). " Start from deepest level
 
+    DATA(t) = cl_abap_datadescr=>describe_by_data_ref( lr ).
     assign lr->* to <field>.
-    describe field <field> type lv_type.
+    lv_type = cl_abap_datadescr=>get_data_type_kind( <field> ).
 
     if lv_type ca c_data_type-elem. " Element data type
       rv_val = |{ <field> }|.
@@ -164,7 +165,7 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
 
     read table it_data_stack into lr index iv_level.
     assign lr->* to <field>.
-    describe field <field> type lv_type.
+    lv_type = cl_abap_datadescr=>get_data_type_kind( <field> ).
     unassign <field>.
 
     if lv_type ca c_data_type-elem. " Element data type.
@@ -413,7 +414,7 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
           lv_unitab     type abap_bool,
           lt_data_stack like it_data_stack.
 
-    describe field i_data type lv_type.
+    lv_type = cl_abap_datadescr=>get_data_type_kind( i_data ).
 
     if lv_type ca c_data_type-table
       and cl_abap_typedescr=>describe_by_data( i_data )->absolute_name = c_ty_struc_tt_absolute_name.

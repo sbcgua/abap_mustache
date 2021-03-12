@@ -1,17 +1,3 @@
-define _add_mu_token.
-  append initial line to &1 assigning <token>.
-  <token>-type    = &2.
-  <token>-cond    = &3.
-  <token>-level   = &4.
-  <token>-content = &5.
-end-of-definition.
-
-define _add_mu_val_rc.
-  append initial line to &1 assigning <rcline>.
-  <rcline>-val    = &2.
-  <rcline>-rc     = &3.
-end-of-definition.
-
 class ltcl_mustache_parser definition final
   for testing risk level harmless duration short.
 
@@ -72,10 +58,12 @@ class ltcl_mustache_parser implementation.
 
     field-symbols <rcline> like line of lt_tab.
 
-    _add_mu_val_rc lt_tab 'Hello {{name}!'               'CTNF'.
-    _add_mu_val_rc lt_tab 'Good {{#pm}}afternoon'        'SNC'.
-    _add_mu_val_rc lt_tab 'Good afternoon{{/pm}}'        'CNOS'.
-    _add_mu_val_rc lt_tab 'Good {{#pm}}afternoon{{/am}}' 'CSM'.
+    lt_tab = VALUE #(
+      ( val = 'Hello {{name}!' rc = 'CTNF' )
+      ( val = 'Good {{#pm}}afternoon' rc = 'SNC' )
+      ( val = 'Good afternoon{{/pm}}' rc = 'CNOS' )
+      ( val = 'Good {{#pm}}afternoon{{/am}}' rc = 'CSM' )
+    ).
 
     loop at lt_tab assigning <rcline>.
       clear lx.
@@ -105,14 +93,16 @@ class ltcl_mustache_parser implementation.
     append '* {{name}} - ${{price}}' to lt_template.
     append '{{/items}}'              to lt_template.
 
-    _add_mu_token lt_exp zif_mustache=>c_token_type-static      ''  1   `Our sales:`.
-    _add_mu_token lt_exp zif_mustache=>c_token_type-static      ''  1   c_nl.
-    _add_mu_token lt_exp zif_mustache=>c_token_type-section     '=' 1   'items'.
-    _add_mu_token lt_exp zif_mustache=>c_token_type-static      ''  2   `* `.
-    _add_mu_token lt_exp zif_mustache=>c_token_type-etag        ''  2   'name'.
-    _add_mu_token lt_exp zif_mustache=>c_token_type-static      ''  2   ` - $`.
-    _add_mu_token lt_exp zif_mustache=>c_token_type-etag        ''  2   'price'.
-    _add_mu_token lt_exp zif_mustache=>c_token_type-static      ''  2   c_nl.
+    lt_exp = VALUE #(
+      ( type = zif_mustache=>c_token_type-static cond = '' level = 1 content = `Our sales:` )
+      ( type = zif_mustache=>c_token_type-static cond = '' level = 1 content = c_nl )
+      ( type = zif_mustache=>c_token_type-section cond = '=' level = 1 content = `items` )
+      ( type = zif_mustache=>c_token_type-static cond = '' level = 2 content = `* ` )
+      ( type = zif_mustache=>c_token_type-etag cond = '' level = 2 content = `name` )
+      ( type = zif_mustache=>c_token_type-static cond = '' level = 2 content = ` - $` )
+      ( type = zif_mustache=>c_token_type-etag cond = '' level = 2 content = `price` )
+      ( type = zif_mustache=>c_token_type-static cond = '' level = 2 content = c_nl )
+    ).
 
     try.
         lt_act = zcl_mustache_parser=>parse_template( it_template = lt_template ).
@@ -146,16 +136,18 @@ class ltcl_mustache_parser implementation.
         cl_abap_unit_assert=>fail( lx->msg ).
     endtry.
 
-    "                    TYPE                                  COND LEV CONTENT
-    _add_mu_token lt_exp zif_mustache=>c_token_type-etag        ''  0   'name'.
-    _add_mu_token lt_exp zif_mustache=>c_token_type-utag        ''  0   'name'.
-    _add_mu_token lt_exp zif_mustache=>c_token_type-utag        ''  0   'name'.
-    _add_mu_token lt_exp zif_mustache=>c_token_type-section     '=' 0   'name'.
-    _add_mu_token lt_exp zif_mustache=>c_token_type-section     '=' 0   'name'.
-    _add_mu_token lt_exp zif_mustache=>c_token_type-section     '!' 0   'name'.
-    _add_mu_token lt_exp zif_mustache=>c_token_type-section_end ''  0   'name'.
-    _add_mu_token lt_exp zif_mustache=>c_token_type-comment     ''  0   'name'.
-    _add_mu_token lt_exp zif_mustache=>c_token_type-delimiter   ''  0   '{* *}'. " Boobs :)
+    lt_exp = VALUE #(
+      ( type = zif_mustache=>c_token_type-etag cond = '' level = 0 content = `name` )
+      ( type = zif_mustache=>c_token_type-utag cond = '' level = 0 content = `name` )
+      ( type = zif_mustache=>c_token_type-utag cond = '' level = 0 content = `name` )
+      ( type = zif_mustache=>c_token_type-section cond = '=' level = 0 content = `name` )
+      ( type = zif_mustache=>c_token_type-section cond = '=' level = 0 content = `name` )
+      ( type = zif_mustache=>c_token_type-section cond = '!' level = 0 content = `name` )
+      ( type = zif_mustache=>c_token_type-section_end cond = '' level = 0 content = `name` )
+      ( type = zif_mustache=>c_token_type-comment cond = '' level = 0 content = `name` )
+      ( type = zif_mustache=>c_token_type-delimiter cond = '' level = 0 content = `{* *}` )
+
+    ).
 
     cl_abap_unit_assert=>assert_equals( exp = lt_exp act = lt_act ).
 
@@ -176,16 +168,17 @@ class ltcl_mustache_parser implementation.
           lx     type ref to zcx_mustache_error.
 
     field-symbols <rcline> like line of lt_tab.
-
-    _add_mu_val_rc lt_tab ''        'ET'.
-    _add_mu_val_rc lt_tab '{}'      'ET'.
-    _add_mu_val_rc lt_tab '   '     'ET'.
-    _add_mu_val_rc lt_tab '{   }'   'ET'.
-    _add_mu_val_rc lt_tab '{name'   'MC}'.
-    _add_mu_val_rc lt_tab '=name'   'MC='.
-    _add_mu_val_rc lt_tab '#'       'ET'.
-    _add_mu_val_rc lt_tab '=xxx='   'CDF'.
-    _add_mu_val_rc lt_tab '=x x x=' 'CDF'.
+    lt_tab = VALUE #(
+      ( val = '' rc = 'ET' )
+      ( val = '{}' rc = 'ET' )
+      ( val = '   ' rc = 'ET' )
+      ( val = '{   }' rc = 'ET' )
+      ( val = '{name' rc = 'MC}' )
+      ( val = '=name' rc = 'MC=' )
+      ( val = '#' rc = 'ET' )
+      ( val = '=xxx=' rc = 'CDF' )
+      ( val = '=x x x=' rc = 'CDF' )
+    ).
 
     loop at lt_tab assigning <rcline>.
       clear lx.

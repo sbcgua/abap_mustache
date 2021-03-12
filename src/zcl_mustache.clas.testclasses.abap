@@ -1,9 +1,3 @@
-define _add_mu_val_rc.
-  append initial line to &1 assigning <rcline>.
-  <rcline>-val    = &2.
-  <rcline>-rc     = &3.
-end-of-definition.
-
 class ltcl_dummy_component definition final.
   public section.
     methods render
@@ -166,10 +160,11 @@ class ltcl_mustache implementation.
 
     zcl_mustache_test=>get_test_data( importing es_simple = ls_dummy ).
 
-    _add_mu_val_rc lt_tab '{{>partial}}'      'PNF'.
-    _add_mu_val_rc lt_tab '{{#obj}}!{{/obj}}' 'CRWD'.
-    _add_mu_val_rc lt_tab '{{field}}'         'FNF'.
-
+    lt_tab = VALUE #(
+      ( val = '{{>partial}}' rc = 'PNF' )
+      ( val = '{{#obj}}!{{/obj}}' rc = 'CRWD' )
+      ( val = '{{field}}' rc = 'FNF' )
+    ).
     loop at lt_tab assigning <rcline>.
       lv_idx = sy-tabix.
       clear lx.
