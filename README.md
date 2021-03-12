@@ -2,6 +2,10 @@
 
 Mustache template engine for ABAP. It implements the [original mustache spec](https://mustache.github.io/mustache.5.html) plus some additions (mainly in plans now :) Mustache is a logic-less template syntax. It is good for generation of HTML or any other text stuff.  
 
+## Versions
+
+The library has a Steampunk (740+) compatible version, thanks to @DerGuteWolf. Currently it lives in the [steampunk](https://github.com/sbcgua/abap_mustache/tree/steampunk) branch. This version, at the time of publication, is somewhat slower compared to the original (master) due to limited whitelisted features of the steampunk (see the [PR comments](https://github.com/sbcgua/abap_mustache/pull/7#issuecomment-797714683)), but it has own advantages and **may become the default in near future**. **If you are using the library in older environments, please notify in the issues to take it into account**
+
 ## Example
 
 Let's assume you have some data like this:
