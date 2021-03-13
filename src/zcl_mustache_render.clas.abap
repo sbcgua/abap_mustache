@@ -162,8 +162,8 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
         rv_val = |{ CONV timestampl( <field> ) TIMESTAMP = (is_statics-timestamp_format) TIMEZONE = is_statics-timestamp_timezone }|.
       else.
         data currency type string.
-        data decimals type integer value -1.
-        data width type integer value -1.
+        data decimals type int2 value -1.
+        data width type int2 value -1.
         data pad type c value ` `.
         field-symbols <alpha> like cl_abap_format=>l_raw.
         assign cl_abap_format=>l_raw to <alpha>.
