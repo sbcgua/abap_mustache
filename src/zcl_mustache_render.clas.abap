@@ -11,6 +11,7 @@ class zcl_mustache_render definition
           partials   type zif_mustache=>ty_partial_tt,
           x_format   type zif_mustache=>ty_x_format,
           part_depth type i,
+          number_format type i,
           date_format type i,
           time_format type i,
           timestamp_format type i,
@@ -132,7 +133,9 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
     data: lr      type ref to data,
           lv_type type c,
           lv_name type string,
-          lt_format type stringtab.
+          lv_value type string,
+          lt_format type stringtab,
+          lt_format_option type stringtab.
 
     field-symbols: <field> type any.
 
@@ -157,15 +160,70 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
         rv_val = |{ CONV timestamp( <field> ) TIMESTAMP = (is_statics-timestamp_format) TIMEZONE = is_statics-timestamp_timezone }|.
       elseif t->absolute_name = '\TYPE=TIMESTAMPL' or ( lv_type = cl_abap_datadescr=>typekind_packed and t->length = 11 and t->decimals = 7 and t->is_ddic_type( ) = abap_true and t->get_ddic_header( )-refname cp '*TZNTSTMPL*' ).
         rv_val = |{ CONV timestampl( <field> ) TIMESTAMP = (is_statics-timestamp_format) TIMEZONE = is_statics-timestamp_timezone }|.
-      elseif lv_type ca 'FIPN%bs8'.
-        if lt_format is not initial.
-          " TODO search format options like width, align, decimals, sign, zero
-
-        else.
-          rv_val = |{ <field> }|.
-        endif.
       else.
-        rv_val = |{ <field> }|.
+        data currency type string.
+        data decimals type integer value -1.
+        data width type integer value -1.
+        data pad type c value ` `.
+        field-symbols <alpha> like cl_abap_format=>l_raw.
+        assign cl_abap_format=>l_raw to <alpha>.
+        field-symbols <sign> like cl_abap_format=>s_left.
+        assign cl_abap_format=>s_left to <sign>.
+        field-symbols <align> like cl_abap_format=>a_left.
+        assign cl_abap_format=>a_left to <align>.
+        field-symbols <zero> like cl_abap_format=>z_yes.
+        assign cl_abap_format=>z_yes to <zero>.
+
+        if lt_format is not initial.
+          loop at lt_format assigning field-symbol(<lv_format>).
+            split <lv_format> at '=' into table lt_format_option.
+            if lines( lt_format_option ) = 2.
+              case to_lower( lt_format_option[ 1 ] ).
+                when 'align'.
+                  lv_value = 'A_' && lt_format_option[ 2 ].
+                  ASSIGN cl_abap_format=>(lv_value) TO <align>.
+                when 'alpha'.
+                  lv_value = 'L_' && lt_format_option[ 2 ].
+                  ASSIGN cl_abap_format=>(lv_value) TO <alpha>.
+                when 'sign'.
+                  lv_value = 'S_' && lt_format_option[ 2 ].
+                  ASSIGN cl_abap_format=>(lv_value) TO <sign>.
+                when 'zero'.
+                  lv_value = 'Z_' && lt_format_option[ 2 ].
+                  ASSIGN cl_abap_format=>(lv_value) TO <zero>.
+                when 'currency'.
+                  currency = lt_format_option[ 2 ].
+                when 'decimals'.
+                  decimals = lt_format_option[ 2 ].
+                when 'width'.
+                  width = lt_format_option[ 2 ].
+                when 'pad'.
+                  pad = lt_format_option[ 2 ].
+              endcase.
+            endif.
+          endloop.
+        endif.
+        if lv_type ca 'FIPN%bs8'.
+          field-symbols <numeric_field> type numeric.
+          assign <field> to <numeric_field>.
+          if currency is not initial.
+            rv_val = |{ <numeric_field> CURRENCY = currency SIGN = (<sign>) ZERO = (<zero>) NUMBER = (is_statics-number_format) }|.
+          else.
+            if decimals <> -1.
+              rv_val = |{ <numeric_field> DECIMALS = ( decimals ) SIGN = (<sign>) ZERO = (<zero>) NUMBER = (is_statics-number_format) }|.
+            else.
+              rv_val = |{ <numeric_field> SIGN = (<sign>) ZERO = (<zero>) NUMBER = (is_statics-number_format) }|.
+            endif.
+          endif.
+        else.
+          if width = -1.
+            rv_val = |{ <field> }|.
+          elseif <alpha> <> cl_abap_format=>l_raw.
+            rv_val = |{ <field> WIDTH = width ALPHA = (<alpha>) }|.
+          else.
+            rv_val = |{ <field> WIDTH = width PAD = pad ALIGN = (<align>) }|.
+          endif.
+        endif.
       endif.
     elseif lv_type ca c_data_type-oref. " Object or interface instance
       rv_val = render_oref( iv_tag_name = iv_name io_obj = <field> ).

@@ -23,6 +23,7 @@ class zcl_mustache definition
         !iv_template type string optional
         !it_template type string_table optional
         !iv_x_format type zif_mustache=>ty_x_format default cl_abap_format=>e_html_text
+        !iv_number_format type i default cl_abap_format=>n_raw
         !iv_date_format type i default cl_abap_format=>d_raw
         !iv_time_format type i default cl_abap_format=>t_raw
         !iv_timestamp_format type i default cl_abap_format=>ts_raw
@@ -37,6 +38,7 @@ class zcl_mustache definition
         !iv_template type string optional
         !it_template type string_table optional
         !iv_x_format type zif_mustache=>ty_x_format default cl_abap_format=>e_html_text
+        !iv_number_format type i default cl_abap_format=>n_environment
         !iv_date_format type i default cl_abap_format=>d_environment
         !iv_time_format type i default cl_abap_format=>t_environment
         !iv_timestamp_format type i default cl_abap_format=>ts_environment
@@ -51,6 +53,7 @@ class zcl_mustache definition
         !iv_template type string optional
         !it_template type string_table optional
         !iv_x_format type zif_mustache=>ty_x_format default cl_abap_format=>e_html_text
+        !iv_number_format type i default cl_abap_format=>n_raw
         !iv_date_format type i default cl_abap_format=>d_raw
         !iv_time_format type i default cl_abap_format=>t_raw
         !iv_timestamp_format type i default cl_abap_format=>ts_raw
@@ -70,6 +73,7 @@ class zcl_mustache definition
     data mt_partials type zif_mustache=>ty_partial_tt.
     data mv_x_format type zif_mustache=>ty_x_format.
 
+    data mv_number_format type i.
     data mv_date_format type i.
     data mv_time_format type i.
     data mv_timestamp_format type i.
@@ -93,6 +97,7 @@ CLASS ZCL_MUSTACHE IMPLEMENTATION.
 
   method constructor.
     mv_x_format = iv_x_format.
+    mv_number_format = iv_number_format.
     mv_date_format = iv_date_format.
     mv_time_format = iv_time_format.
     mv_timestamp_format = iv_timestamp_format.
@@ -109,6 +114,7 @@ CLASS ZCL_MUSTACHE IMPLEMENTATION.
         iv_template = iv_template
         it_template = it_template
         iv_x_format = iv_x_format
+        iv_number_format = iv_number_format
         iv_date_format = iv_date_format
         iv_time_format = iv_time_format
         iv_timestamp_format = iv_timestamp_format
@@ -121,6 +127,7 @@ CLASS ZCL_MUSTACHE IMPLEMENTATION.
         iv_template = iv_template
         it_template = it_template
         iv_x_format = iv_x_format
+        iv_number_format = iv_number_format
         iv_date_format = iv_date_format
         iv_time_format = iv_time_format
         iv_timestamp_format = iv_timestamp_format
@@ -170,6 +177,7 @@ CLASS ZCL_MUSTACHE IMPLEMENTATION.
     ls_statics-tokens   = mt_tokens.
     ls_statics-partials = mt_partials.
     ls_statics-x_format = mv_x_format.
+    ls_statics-number_format = mv_number_format.
     ls_statics-date_format = mv_date_format.
     ls_statics-time_format = mv_time_format.
     ls_statics-timestamp_format = mv_timestamp_format.
