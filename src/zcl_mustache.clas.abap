@@ -23,6 +23,24 @@ class zcl_mustache definition
         !iv_template type string optional
         !it_template type string_table optional
         !iv_x_format type zif_mustache=>ty_x_format default cl_abap_format=>e_html_text
+        !iv_date_format type i default cl_abap_format=>d_raw
+        !iv_time_format type i default cl_abap_format=>t_raw
+        !iv_timestamp_format type i default cl_abap_format=>ts_raw
+        !iv_timestamp_timezone type tznzone default 'UTC'
+      preferred parameter iv_template
+      returning
+        value(ro_instance) type ref to zcl_mustache
+      raising
+        zcx_mustache_error .
+    class-methods create_using_env
+      importing
+        !iv_template type string optional
+        !it_template type string_table optional
+        !iv_x_format type zif_mustache=>ty_x_format default cl_abap_format=>e_html_text
+        !iv_date_format type i default cl_abap_format=>d_environment
+        !iv_time_format type i default cl_abap_format=>t_environment
+        !iv_timestamp_format type i default cl_abap_format=>ts_environment
+        !iv_timestamp_timezone type tznzone default 'UTC'
       preferred parameter iv_template
       returning
         value(ro_instance) type ref to zcl_mustache
@@ -33,6 +51,10 @@ class zcl_mustache definition
         !iv_template type string optional
         !it_template type string_table optional
         !iv_x_format type zif_mustache=>ty_x_format default cl_abap_format=>e_html_text
+        !iv_date_format type i default cl_abap_format=>d_raw
+        !iv_time_format type i default cl_abap_format=>t_raw
+        !iv_timestamp_format type i default cl_abap_format=>ts_raw
+        !iv_timestamp_timezone type tznzone default 'UTC'
       preferred parameter iv_template
       raising
         zcx_mustache_error .
@@ -47,6 +69,11 @@ class zcl_mustache definition
     data mt_tokens   type zif_mustache=>ty_token_tt.
     data mt_partials type zif_mustache=>ty_partial_tt.
     data mv_x_format type zif_mustache=>ty_x_format.
+
+    data mv_date_format type i.
+    data mv_time_format type i.
+    data mv_timestamp_format type i.
+    data mv_timestamp_timezone type tznzone.
 
 ENDCLASS.
 
@@ -66,6 +93,10 @@ CLASS ZCL_MUSTACHE IMPLEMENTATION.
 
   method constructor.
     mv_x_format = iv_x_format.
+    mv_date_format = iv_date_format.
+    mv_time_format = iv_time_format.
+    mv_timestamp_format = iv_timestamp_format.
+    mv_timestamp_timezone = iv_timestamp_timezone.
     mt_tokens   = zcl_mustache_parser=>parse_template(
       iv_template = iv_template
       it_template = it_template ).
@@ -77,7 +108,23 @@ CLASS ZCL_MUSTACHE IMPLEMENTATION.
       exporting
         iv_template = iv_template
         it_template = it_template
-        iv_x_format = iv_x_format.
+        iv_x_format = iv_x_format
+        iv_date_format = iv_date_format
+        iv_time_format = iv_time_format
+        iv_timestamp_format = iv_timestamp_format
+        iv_timestamp_timezone = iv_timestamp_timezone.
+  endmethod. " create.
+
+  method create_using_env.
+    create object ro_instance
+      exporting
+        iv_template = iv_template
+        it_template = it_template
+        iv_x_format = iv_x_format
+        iv_date_format = iv_date_format
+        iv_time_format = iv_time_format
+        iv_timestamp_format = iv_timestamp_format
+        iv_timestamp_timezone = iv_timestamp_timezone.
   endmethod. " create.
 
 
@@ -123,6 +170,10 @@ CLASS ZCL_MUSTACHE IMPLEMENTATION.
     ls_statics-tokens   = mt_tokens.
     ls_statics-partials = mt_partials.
     ls_statics-x_format = mv_x_format.
+    ls_statics-date_format = mv_date_format.
+    ls_statics-time_format = mv_time_format.
+    ls_statics-timestamp_format = mv_timestamp_format.
+    ls_statics-timestamp_timezone = mv_timestamp_timezone.
 
     zcl_mustache_render=>render_section(
       exporting

@@ -11,6 +11,10 @@ class zcl_mustache_render definition
           partials   type zif_mustache=>ty_partial_tt,
           x_format   type zif_mustache=>ty_x_format,
           part_depth type i,
+          date_format type i,
+          time_format type i,
+          timestamp_format type i,
+          timestamp_timezone type tznzone,
         end of ty_context .
 
     " Max depth of partials recursion, feel free to change for your needs
@@ -30,6 +34,9 @@ class zcl_mustache_render definition
         !it_data_stack type zif_mustache=>ty_ref_tt optional
         !iv_start_idx type i default 1
         !iv_path type string default '/'
+        !iv_cond type zif_mustache=>ty_token-cond default zif_mustache=>c_section_condition-if
+        !iv_first type abap_bool optional
+        !iv_last type abap_bool optional
       changing
         !ct_lines type string_table
       raising
@@ -40,6 +47,8 @@ class zcl_mustache_render definition
         !it_data_stack type zif_mustache=>ty_ref_tt
         !iv_start_idx type i
         !iv_path type string
+        !iv_first type abap_bool optional
+        !iv_last type abap_bool optional
       changing
         !ct_lines type string_table
       raising
@@ -48,6 +57,7 @@ class zcl_mustache_render definition
       importing
         !iv_name type string
         !it_data_stack type zif_mustache=>ty_ref_tt
+        !is_statics type ty_context
       returning
         value(rv_val) type string
       raising
@@ -120,11 +130,17 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
   method find_value.
 
     data: lr      type ref to data,
-          lv_type type c.
+          lv_type type c,
+          lv_name type string,
+          lt_format type stringtab.
 
     field-symbols: <field> type any.
 
-    lr = find_walker( iv_name       = iv_name
+    split iv_name at '#' into table lt_format.
+    lv_name = lt_format[ 1 ].
+    delete lt_format index 1.
+
+    lr = find_walker( iv_name       = lv_name
                       it_data_stack = it_data_stack
                       iv_level      = lines( it_data_stack ) ). " Start from deepest level
 
@@ -133,7 +149,24 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
     lv_type = cl_abap_datadescr=>get_data_type_kind( <field> ).
 
     if lv_type ca c_data_type-elem. " Element data type
-      rv_val = |{ <field> }|.
+      if lv_type = cl_abap_datadescr=>typekind_date.
+        rv_val = |{ CONV d( <field> ) DATE = (is_statics-date_format) }|.
+      elseif lv_type = cl_abap_datadescr=>typekind_time.
+        rv_val = |{ CONV t( <field> ) TIME = (is_statics-time_format) }|.
+      elseif t->absolute_name = '\TYPE=TIMESTAMP' or ( lv_type = cl_abap_datadescr=>typekind_packed and t->length = 8 and t->decimals = 0 and t->is_ddic_type( ) = abap_true and t->get_ddic_header( )-refname cp '*TZNTSTMP*' ).
+        rv_val = |{ CONV timestamp( <field> ) TIMESTAMP = (is_statics-timestamp_format) TIMEZONE = is_statics-timestamp_timezone }|.
+      elseif t->absolute_name = '\TYPE=TIMESTAMPL' or ( lv_type = cl_abap_datadescr=>typekind_packed and t->length = 11 and t->decimals = 7 and t->is_ddic_type( ) = abap_true and t->get_ddic_header( )-refname cp '*TZNTSTMPL*' ).
+        rv_val = |{ CONV timestampl( <field> ) TIMESTAMP = (is_statics-timestamp_format) TIMEZONE = is_statics-timestamp_timezone }|.
+      elseif lv_type ca 'FIPN%bs8'.
+        if lt_format is not initial.
+          " TODO search format options like width, align, decimals, sign, zero
+
+        else.
+          rv_val = |{ <field> }|.
+        endif.
+      else.
+        rv_val = |{ <field> }|.
+      endif.
     elseif lv_type ca c_data_type-oref. " Object or interface instance
       rv_val = render_oref( iv_tag_name = iv_name io_obj = <field> ).
     else.
@@ -289,17 +322,23 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
           endif.
 
         when zif_mustache=>c_token_type-etag or zif_mustache=>c_token_type-utag.  " Single tag
-          lv_val  = find_value( iv_name = <token>-content  it_data_stack = it_data_stack ).
+          lv_val  = find_value( iv_name = <token>-content  it_data_stack = it_data_stack  is_statics = is_statics ).
           if <token>-type = zif_mustache=>c_token_type-etag and is_statics-x_format is not initial.
             lv_val = escape( val = lv_val format = is_statics-x_format ).
           endif.
           append lv_val to lt_buf.
 
         when zif_mustache=>c_token_type-section.
-          lr = find_walker( iv_name       = <token>-content
-                            it_data_stack = it_data_stack
-                            iv_level      = lines( it_data_stack ) ). " Start from deepest level
-          assign lr->* to <field>.
+          if <token>-content = '@first'.
+            assign iv_first to <field>.
+          elseif <token>-content = '@last'.
+            assign iv_last to <field>.
+          else.
+            lr = find_walker( iv_name       = <token>-content
+                              it_data_stack = it_data_stack
+                              iv_level      = lines( it_data_stack ) ). " Start from deepest level
+            assign lr->* to <field>.
+          endif.
 
           if abap_true = eval_condition( iv_var = <field> iv_cond = <token>-cond ).
             render_section(
@@ -309,6 +348,7 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
                 iv_start_idx  = lv_idx + 1
                 i_data        = <field>
                 iv_path       = iv_path && <token>-content && '/'
+                iv_cond       = <token>-cond
               changing
                 ct_lines      = lt_buf ).
           endif.
@@ -438,7 +478,7 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
 
     if lv_type ca c_data_type-struc
        or lv_type ca c_data_type-elem
-       or lv_unitab = abap_true.
+       or lv_unitab = abap_true or iv_cond = zif_mustache=>c_section_condition-ifnot.
 
       " Update context
       lt_data_stack = it_data_stack.
@@ -454,6 +494,8 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
           it_data_stack = lt_data_stack
           iv_start_idx  = iv_start_idx
           iv_path       = iv_path
+          iv_first      = iv_first
+          iv_last       = iv_last
         changing
           ct_lines      = ct_lines ).
 
@@ -471,6 +513,9 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
             iv_start_idx  = iv_start_idx
             i_data        = <tabline>
             iv_path       = iv_path
+            iv_cond       = iv_cond
+            iv_first      = xsdbool( sy-tabix = 1 )
+            iv_last       = xsdbool( sy-tabix = lines( <table> ) )
         changing
           ct_lines        = ct_lines ).
       endloop.

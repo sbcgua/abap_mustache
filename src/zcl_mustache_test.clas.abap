@@ -55,13 +55,14 @@ class zcl_mustache_test definition
     class-methods get_test_case
       importing iv_index    type i optional
       exporting ev_count        type i
-                ev_complex_test type abap_bool
+                ev_complex_test type c
                 ev_template     type string
                 et_tokens       type zif_mustache=>ty_token_tt
                 ev_output       type string.
     class-methods get_test_data
       exporting es_simple   type ty_dummy
-                et_complex  type zif_mustache=>ty_struc_tt.
+                et_complex1 type zif_mustache=>ty_struc_tt
+                et_complex2 type zif_mustache=>ty_struc_tt.
 
     class-methods class_constructor.
 
@@ -163,7 +164,7 @@ CLASS ZCL_MUSTACHE_TEST IMPLEMENTATION.
 
     " Case 8
     append initial line to gt_test_case_stash assigning <t>.
-    <t>-complex_test = abap_true.
+    <t>-complex_test = '1'.
     <t>-template = 'Welcome to {{shop}}'                    && "c_nl &&
                    'Our sales:'                             && "c_nl &&
                    '{{#items}}'                             && "c_nl &&
@@ -193,7 +194,7 @@ CLASS ZCL_MUSTACHE_TEST IMPLEMENTATION.
 
     " Case 9 - newlines and lonely section
     append initial line to gt_test_case_stash assigning <t>.
-    <t>-complex_test = abap_true.
+    <t>-complex_test = '1'.
     <t>-template = 'Our sales:'                             && c_nl &&
                    `  {{#items}}  `                         && c_nl &&
                    '* {{name}} - ${{price}}'                && c_nl &&
@@ -222,6 +223,45 @@ CLASS ZCL_MUSTACHE_TEST IMPLEMENTATION.
     ).
     <t>-output = 'line1,line2,'.
 
+    " Case 11 - empty table, -first/-last
+    append initial line to gt_test_case_stash assigning <t>.
+    <t>-complex_test = '2'.
+    <t>-template =
+       'Our sales:'                             && c_nl &&
+       '{{#items}}'                             && c_nl &&
+       '* {{name}} - ${{price}}'                && c_nl &&
+       '  sizes: {{#sizes}}{{^@first}}, {{/@first}}{{size}}{{#@last}}.{{/@last}}{{/sizes}}{{^sizes}}all sold out{{/sizes}}' && c_nl &&
+       '{{/items}}'.
+    <t>-tokens = VALUE #(
+      ( type = zif_mustache=>c_token_type-static level = 1 content = `Our sales:` )
+      ( type = zif_mustache=>c_token_type-static level = 1 content = c_nl )
+      ( type = zif_mustache=>c_token_type-section cond = zif_mustache=>c_section_condition-if level = 1 content = `items` )
+      ( type = zif_mustache=>c_token_type-static level = 2 content = `* ` )
+      ( type = zif_mustache=>c_token_type-etag level = 2 content = `name` )
+      ( type = zif_mustache=>c_token_type-static level = 2 content = ` - $` )
+      ( type = zif_mustache=>c_token_type-etag level = 2 content = `price` )
+      ( type = zif_mustache=>c_token_type-static level = 2 content = c_nl )
+
+      ( type = zif_mustache=>c_token_type-static level = 2 content = `  sizes: ` )
+      ( type = zif_mustache=>c_token_type-section cond = zif_mustache=>c_section_condition-if level = 2 content = `sizes` )
+      ( type = zif_mustache=>c_token_type-section cond = zif_mustache=>c_section_condition-ifnot level = 3 content = `@first` )
+      ( type = zif_mustache=>c_token_type-static level = 4 content = `, ` )
+      ( type = zif_mustache=>c_token_type-etag level = 3 content = `size` )
+      ( type = zif_mustache=>c_token_type-section cond = zif_mustache=>c_section_condition-if level = 3 content = `@last` )
+      ( type = zif_mustache=>c_token_type-static level = 4 content = `.` )
+
+
+      ( type = zif_mustache=>c_token_type-section cond = zif_mustache=>c_section_condition-ifnot level = 2 content = `sizes` )
+      ( type = zif_mustache=>c_token_type-static level = 3 content = `all sold out` )
+
+      ( type = zif_mustache=>c_token_type-static level = 2 content = c_nl )
+
+    ).
+    <t>-output   = 'Our sales:'                            && c_nl &&
+                   '* 3-Hole - $100'                       && c_nl &&
+                   '  sizes: 37, 40, 42.'                  && c_nl &&
+                   '* 6-Hole - $200'                       && c_nl &&
+                   '  sizes: all sold out'                 && c_nl.
   endmethod.  " class_setup.
 
 
@@ -249,7 +289,7 @@ CLASS ZCL_MUSTACHE_TEST IMPLEMENTATION.
 
   method get_test_data.
 
-    field-symbols: <data> like line of et_complex,
+    field-symbols: <data> like line of et_complex1,
                    <tab>  type ty_item_tt,
                    <item> like line of <tab>,
                    <size> type ty_size.
@@ -264,12 +304,12 @@ CLASS ZCL_MUSTACHE_TEST IMPLEMENTATION.
     append 'line2' to es_simple-tab.
 
     " Complex data
-    clear et_complex.
+    clear et_complex1.
 
-    append initial line to et_complex assigning <data>.
+    append initial line to et_complex1 assigning <data>.
     <data>-name = 'shop'.
     <data>-val  = 'Shopsky'.
-    append initial line to et_complex assigning <data>.
+    append initial line to et_complex1 assigning <data>.
     <data>-name = 'items'.
     create data <data>-dref type ty_item_tt.
 
@@ -303,5 +343,10 @@ CLASS ZCL_MUSTACHE_TEST IMPLEMENTATION.
     <size>-size = 'L'.
     <size>-qty  = 18.
 
+    " Complexer data
+    et_complex2 = VALUE #( ( name = 'shop' val  = 'Shopsky' ) ( name = 'items' dref = NEW ty_item_tt(
+      ( name = '3-Hole' price = '100' sizes = VALUE #( ( size = '37' qty = 2 ) ( size = '40' qty = 3 ) ( size = '42' qty = 4 ) ) )
+      ( name = '6-Hole' price = '200' )
+    ) ) ).
   endmethod. "get_test_data
 ENDCLASS.
