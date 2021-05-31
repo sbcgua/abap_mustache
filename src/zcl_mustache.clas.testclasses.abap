@@ -86,7 +86,7 @@ class ltcl_mustache implementation.
           lv_act      type string,
           lx          type ref to zcx_mustache_error.
 
-    zcl_mustache_test=>get_test_data( importing et_complex  = lt_data ).
+    zcl_mustache_test=>get_test_data( importing et_complex1  = lt_data ).
     lv_exp = 'Welcome to Shopsky' &&
              '* Boots - $99.00'   &&
              '* T-short - $49.00'.
@@ -123,7 +123,7 @@ class ltcl_mustache implementation.
           lt_act      type string_table,
           lx          type ref to zcx_mustache_error.
 
-    zcl_mustache_test=>get_test_data( importing et_complex  = lt_data ).
+    zcl_mustache_test=>get_test_data( importing et_complex1  = lt_data ).
 
     append 'Welcome to Shopsky' to lt_exp.
     append '* Boots - $99.00' to lt_exp.
