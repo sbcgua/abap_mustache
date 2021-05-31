@@ -1,0 +1,13 @@
+Abap mustache changelog [Steampunk]
+===================================
+
+Legend
+------
+* : fixed
+! : changed
++ : added
+- : removed
+
+v2.1.0, 2021-05-31
+------------------
++ A lot of new features from @DerGuteWolf, including inverted sections, better date/time formatting, first/last items, alpha formatting, etc. See issue #8 for more details.
