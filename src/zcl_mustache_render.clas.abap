@@ -97,16 +97,20 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
 
   method eval_condition.
 
+    data lv_type type c.
+    data lv_bool type abap_bool.
+
+    describe field iv_var type lv_type.
+
+    lv_bool = boolc( iv_var is not initial
+      and not ( lv_type = 'g' and iv_var = ` ` ) ). " boolc into string, see #10
+
     case iv_cond.
       when zif_mustache=>c_section_condition-if.
-        if iv_var is not initial.
-          rv_result = abap_true.
-        endif.
+        rv_result = lv_bool.
 
       when zif_mustache=>c_section_condition-ifnot.
-        if iv_var is initial.
-          rv_result = abap_true.
-        endif.
+        rv_result = boolc( lv_bool = abap_false ).
 
       when others.
         zcx_mustache_error=>raise(
@@ -114,7 +118,7 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
           rc  = 'UC' ).
     endcase.
 
-  endmethod. "eval_condition
+  endmethod.
 
 
   method find_value.
