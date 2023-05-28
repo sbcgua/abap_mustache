@@ -23,6 +23,11 @@ class zcl_mustache_test definition
         end of attr,
       end of ty_dummy,
 
+      begin of ty_date_and_time,
+        d_date type d,
+        t_time type t,
+      end of ty_date_and_time,
+
       begin of ty_size,
         size type char4,
         qty  type i,

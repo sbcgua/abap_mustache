@@ -125,8 +125,8 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
 
     data: lr      type ref to data,
           lv_type type c.
-    data lv_date type datum.
-    data lv_time type tims.
+    data lv_date type d.
+    data lv_time type t.
 
     field-symbols: <field> type any.
 

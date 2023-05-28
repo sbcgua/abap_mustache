@@ -16,6 +16,7 @@ class ltcl_mustache_render definition final
     methods find_value     for testing.
     methods render_section for testing.
     methods render_path for testing.
+    methods find_value_date_and_time for testing.
 
 endclass.
 
@@ -88,7 +89,6 @@ class ltcl_mustache_render implementation.
       catch zcx_mustache_error into lx.
         cl_abap_unit_assert=>fail( lx->msg ).
     endtry.
-
 
   endmethod.  " find_value.
 
@@ -213,6 +213,39 @@ class ltcl_mustache_render implementation.
         act = lv_act ).
     catch zcx_mustache_error into lx.
       cl_abap_unit_assert=>fail( lx->msg ).
+    endtry.
+
+  endmethod.
+
+  method find_value_date_and_time.
+
+    data date_and_time type zcl_mustache_test=>ty_date_and_time.
+    data value_as_string type c length 20.
+    data test_data_reference type ref to data.
+    data test_data_stack type zif_mustache=>ty_ref_tt.
+
+    date_and_time-d_date = '20230528'.
+    date_and_time-t_time = '213759'.
+
+    get reference of date_and_time into test_data_reference.
+    append test_data_reference to test_data_stack.
+
+    try.
+        write date_and_time-d_date to value_as_string LEFT-JUSTIFIED.
+        cl_abap_unit_assert=>assert_equals(
+            exp = value_as_string
+            act = zcl_mustache_render=>find_value(
+                      it_data_stack = test_data_stack
+                      iv_name = 'd_date' ) ).
+
+        write date_and_time-t_time to value_as_string LEFT-JUSTIFIED.
+        cl_abap_unit_assert=>assert_equals(
+            exp = value_as_string
+            act = zcl_mustache_render=>find_value(
+                      it_data_stack = test_data_stack
+                      iv_name = 't_time' ) ).
+      catch zcx_mustache_error into data(mustache_error).
+        cl_abap_unit_assert=>fail( mustache_error->msg ).
     endtry.
 
   endmethod.
