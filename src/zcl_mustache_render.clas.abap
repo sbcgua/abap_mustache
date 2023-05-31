@@ -17,10 +17,10 @@ class zcl_mustache_render definition
     constants c_max_partials_depth type i value 10.         "#EC NOTEXT
     constants:
       begin of c_data_type,
-          elem  type char10 value 'IFPCDNTg',
-          struc type char2  value 'uv',
-          table type char1  value 'h',
-          oref  type char1  value 'r',
+          elem  type c length 10 value 'IFPCDNTg',
+          struc type c length 2 value 'uv',
+          table type c length 1 value 'h',
+          oref  type c length 1 value 'r',
         end of c_data_type .
 
     class-methods render_section
@@ -125,6 +125,8 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
 
     data: lr      type ref to data,
           lv_type type c.
+    data lv_date type d.
+    data lv_time type t.
 
     field-symbols: <field> type any.
 
@@ -136,7 +138,16 @@ CLASS ZCL_MUSTACHE_RENDER IMPLEMENTATION.
     describe field <field> type lv_type.
 
     if lv_type ca c_data_type-elem. " Element data type
-      rv_val = |{ <field> }|.
+      case lv_type.
+        when 'D'.
+          lv_date = <field>.
+          rv_val = |{ lv_date DATE = ENVIRONMENT }|.
+        when 'T'.
+          lv_time = <field>.
+          rv_val = |{ lv_time TIME = ENVIRONMENT }|.
+        when others.
+          rv_val = |{ <field> }|.
+      endcase.
     elseif lv_type ca c_data_type-oref. " Object or interface instance
       rv_val = render_oref( iv_tag_name = iv_name io_obj = <field> ).
     else.
